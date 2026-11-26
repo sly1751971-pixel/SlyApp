@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Tarjeta</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f1f5f9;padding-bottom:40px;color:#1e293b}
+header{background:#0f172a;color:white;padding:18px;text-align:center}
+.container{max-width:520px;margin:0 auto;padding:14px}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+label{font-size:13px;font-weight:600;display:block;margin-top:10px}
+input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;margin-top:4px;font-size:15px}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px}
+.btn-green{background:#16a34a;color:white}.btn-blue{background:#2563eb;color:white}.btn-gray{background:#e2e8f0;color:#334155}
+.mutual{font-size:13px;color:#64748b}
+.x{color:red;cursor:pointer;font-weight:800;padding:6px 10px;font-size:18px}
+.top{background:#0f172a;color:white;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+.top b{font-size:28px}
+.mes{background:white;border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;border:2px solid transparent}
+.mes.abierto{border-color:#2563eb}
+.mesGrande{font-size:22px;font-weight:800;text-transform:uppercase}
+.cierre{background:#fef3c7;border-radius:14px;padding:14px;text-align:center;margin:10px 0}
+.cierre b{font-size:20px}
+.cons{background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:5px solid #2563eb}
+.cuota{display:inline-block;background:#2563eb;color:white;padding:6px 12px;border-radius:12px;font-weight:800;font-size:18px;margin:6px 0}
+.cuota.rojo{background:#dc2626}.cuota.naranja{background:#ea580c}
+.btn-mini{padding:8px 10px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer}
+</style>
+</head>
+<body>
+<header><h1>💳 Control Tarjeta</h1><p>Solo tarjeta, mes a mes</p></header>
+<div class="container" id="app"><div class="card"><p>Cargando...</p></div></div>
+<script>
+let datos={tarjetas:[],consumos:[],cierre:'19/11/2026',vencimiento:'01/12/2026',cierres:[{cierre:'19/11/2026',vencimiento:'01/12/2026'},{cierre:'23/12/2026',vencimiento:'04/01/2027'}]};
+let mesAbierto='2026-11';let filtro='';
+function cargar(){
+  let keys=['slyapp_v44','slyapp_v43','slyapp_v42','slyapp_v41','slyapp_v40','slyapp_v39','slyapp_v38'];
+  for(let k of keys){
+    try{let d=JSON.parse(localStorage.getItem(k)||'null');if(d&&d.consumos&&d.consumos.length){datos.tarjetas=d.tarjetas||[];datos.consumos=d.consumos;if(d.cierres&&d.cierres.length)datos.cierres=d.cierres;if(d.cierre)datos.cierre=d.cierre;if(d.vencimiento)datos.vencimiento=d.vencimiento;break;}}catch(e){}
+  }
+  let aprox=[['22/01/2027','03/02/2027'],['21/02/2027','05/03/2027'],['23/03/2027','04/04/2027'],['22/04/2027','04/05/2027'],['21/05/2027','02/06/2027'],['22/06/2027','04/07/2027']];
+  aprox.forEach(a=>{if(!datos.cierres.some(c=>c.cierre===a[0]))datos.cierres.push({cierre:a[0],vencimiento:a[1]});});
+}
+function guardar(){try{localStorage.setItem('slyapp_v45',JSON.stringify(datos));}catch(e){}}
+function fmt(n){return '$ '+(Number(n)||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const ML=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function clave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function pf(s){if(!s)return null;let p=s.split('/');return new Date(p[2],p[1]-1,p[0]);}
+function cierreDe(y,m){let e=datos.cierres.find(c=>{let f=pf(c.cierre);return f&&f.getFullYear()===y&&f.getMonth()===m;});return e?e.cierre:'Sin cargar';}
+function vtoDe(y,m){let e=datos.cierres.find(c=>{let f=pf(c.cierre);return f&&f.getFullYear()===y&&f.getMonth()===m;});return e?e.vencimiento:'Sin cargar';}
+function cuotaMes(c,k){let ini=new Date(c.fechaInicio+'T00:00:00');let p=k.split('-');let dif=(+p[0]-ini.getFullYear())*12+(+p[1]-1-ini.getMonth());if(dif<0||dif>=c.cuotas)return 0;return c.montoTotal/c.cuotas;}
+function numCuota(c,y,m){let ini=new Date(c.fechaInicio+'T00:00:00');return (y-ini.getFullYear())*12+(m-ini.getMonth())+1;}
+function totalMes(k){return datos.consumos.filter(c=>!filtro||c.tarjeta===filtro).reduce((a,c)=>a+cuotaMes(c,k),0);}
+function fechaCompra(c){try{let d=new Date(c.fechaInicio+'T00:00:00');return d.getDate()+' de '+ML[d.getMonth()]+' '+d.getFullYear();}catch(e){return '';}}
+function toggle(k){mesAbierto=(mesAbierto===k?'':k);render();}
+function editarCierre(y,m){
+  let nc=prompt('Cierre de '+ML[m]+' (DD/MM/AAAA):',cierreDe(y,m));if(nc===null)return;
+  let nv=prompt('Vencimiento de '+ML[m]+' (DD/MM/AAAA):',vtoDe(y,m));if(nv===null)return;
+  let e=datos.cierres.find(c=>{let f=pf(c.cierre);return f&&f.getFullYear()===y&&f.getMonth()===m;});
+  if(e){e.cierre=nc.trim();e.vencimiento=nv.trim();}else{datos.cierres.push({cierre:nc.trim(),vencimiento:nv.trim()});}
+  guardar();render();
+}
+function editarConsumo(i){
+  let c=datos.consumos[i];let d1=prompt('¿Qué compraste?',c.descripcion);if(d1===null)return;
+  let m1=prompt('Monto total:',c.montoTotal);if(m1===null)return;
+  let cu=prompt('Cuotas:',c.cuotas);if(cu===null)return;
+  let f1=prompt('Fecha (AAAA-MM-DD):',c.fechaInicio);if(f1===null)return;
+  c.descripcion=d1;c.montoTotal=parseFloat(m1);c.cuotas=parseInt(cu)||1;c.fechaInicio=f1;c.valorCuota=c.montoTotal/c.cuotas;guardar();render();
+}
+function borrarConsumo(i){if(!confirm('¿Borrar este consumo?'))return;datos.consumos.splice(i,1);guardar();render();}
+function agregarEnMes(k){
+  let tar=document.getElementById('tar-'+k).value;let des=document.getElementById('des-'+k).value.trim();let mo=parseFloat(document.getElementById('mon-'+k).value);let cu=parseInt(document.getElementById('cuo-'+k).value)||1;let fe=document.getElementById('fec-'+k).value||k+'-01';
+  if(!tar||!des||!mo)return alert('Completá tarjeta, qué compraste y monto');
+  datos.consumos.push({descripcion:des,montoTotal:mo,tarjeta:tar,cuotas:cu,fechaInicio:fe,cuotaActual:1,valorCuota:mo/cu});guardar();mesAbierto=k;render();
+}
+function crearTarjeta(){
+  let n=document.getElementById('nt-nombre').value.trim();if(!n)return alert('Poné nombre');
+  datos.tarjetas.push({nombre:n});guardar();render();
+}
+function render(){
+  let el=document.getElementById('app');
+  let hoy=new Date();let meses=[];let d=new Date(hoy.getFullYear(),hoy.getMonth(),1);let fin=new Date(2027,5,1);
+  while(d<=fin){meses.push(clave(d));d=new Date(d.getFullYear(),d.getMonth()+1,1);}
+  let esteMes=totalMes(clave(hoy));
+  let html='<div class="top"><small>🎯 CONTROL TARJETA</small><div style="margin-top:8px"><small>Este mes a pagar solo tarjeta</small><br><b>'+fmt(esteMes)+'</b></div></div>';
+  html+='<div class="card"><label>Ver solo una tarjeta</label><select onchange="filtro=this.value;render()"><option value="">Todas las tarjetas</option>'+datos.tarjetas.map(t=>'<option value="'+t.nombre+'" '+(filtro===t.nombre?'selected':'')+'>'+t.nombre+'</option>').join('')+'</select></div>';
+  html+=meses.map(k=>{
+    let p=k.split('-');let y=+p[0],m=+p[1]-1;let cons=datos.consumos.filter(c=>(!filtro||c.tarjeta===filtro)&&cuotaMes(c,k)>0);let tot=totalMes(k);let ab=mesAbierto===k;
+    let inner='';
+    if(ab){
+      inner='<div onclick="event.stopPropagation()"><div class="cierre"><div class="mesGrande">'+ML[m]+' '+y+'</div><div style="margin-top:8px"><b>CIERRA: '+cierreDe(y,m)+'</b></div><div><b>VENCE: '+vtoDe(y,m)+'</b></div><button class="btn btn-blue" onclick="editarCierre('+y+','+m+')">✏️ Editar cierre y vencimiento</button><div style="margin-top:10px"><b style="font-size:20px">TOTAL CONSUMIDO ESTE MES: '+fmt(tot)+'</b></div></div>';
+      inner+='<div class="card"><b>➕ Agregar consumo en '+ML[m]+'</b><label>Tarjeta</label><select id="tar-'+k+'">'+datos.tarjetas.map(t=>'<option value="'+t.nombre+'">'+t.nombre+'</option>').join('')+'</select><label>¿Qué compraste?</label><input id="des-'+k+'" placeholder="Ej: Farmacity"><label>Monto total</label><input id="mon-'+k+'" type="number" placeholder="12000"><label>Cuotas</label><input id="cuo-'+k+'" type="number" value="1"><label>Fecha de compra</label><input id="fec-'+k+'" type="date" value="'+k+'-01"><button class="btn btn-green" onclick="agregarEnMes(\''+k+'\')">➕ Agregar</button></div>';
+      inner+=cons.map(c=>{
+        let idx=datos.consumos.indexOf(c);let num=numCuota(c,y,m);let cm=c.montoTotal/c.cuotas;let ult=num===c.cuotas;let cl=ult?'rojo':(num>=c.cuotas-2?'naranja':'');
+        return '<div class="cons"><b style="font-size:18px">'+c.descripcion+'</b><br><span class="mutual">'+c.tarjeta+' • 📅 '+fechaCompra(c)+'</span><br><span class="cuota '+cl+'">'+num+'/'+c.cuotas+'</span>'+(ult?' <b>🔥 Última cuota</b>':'')+'<div><b>Monto a pagar de esta cuota: '+fmt(cm)+'</b></div><div><b>Monto total de la compra: '+fmt(c.montoTotal)+'</b></div><div style="margin-top:10px;display:flex;gap:8px"><button class="btn-mini" style="background:#e2e8f0;flex:1" onclick="editarConsumo('+idx+')">✏️ Editar</button><button class="btn-mini" style="background:#fee2e2;flex:1" onclick="borrarConsumo('+idx+')">🗑 Borrar</button></div></div>';
+      }).join('')||'<p class="mutual">✅ Sin consumos este mes - $0</p>';
+      inner+='</div>';
+    }
+    return '<div class="mes '+(ab?'abierto':'')+'" onclick="toggle(\''+k+'\')"><div style="display:flex;justify-content:space-between"><div><div class="mesGrande">📅 '+ML[m]+' '+y+'</div><div><b>Cierra '+cierreDe(y,m)+' • Vence '+vtoDe(y,m)+'</b></div><div class="mutual">'+cons.length+' consumos</div></div><div style="text-align:right"><small>Total consumido</small><br><b style="font-size:20px">'+fmt(tot)+'</b><br><span class="mutual">'+(ab?'▲ Cerrar':'▼ Abrir')+'</span></div></div>'+inner+'</div>';
+  }).join('');
+  html+='<div class="card"><b>➕ Crear tarjeta nueva</b><label>Nombre</label><input id="nt-nombre" placeholder="Ej: Visa Santander"><button class="btn btn-blue" onclick="crearTarjeta()">➕ Crear tarjeta</button></div>';
+  el.innerHTML=html;
+}
+try{cargar();render();}catch(e){document.getElementById('app').innerHTML='<div class="card"><b>Error:</b> '+e.message+'</div>';}
+</script>
+</body>
+</html>
