@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Gastos</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111827">
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2331/2331966.png">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #f3f4f6; color: #111; font-size: 16px; }
+    header { background: #111827; color: white; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    header h1 { font-size: 18px; margin: 0; display: flex; align-items: center; gap: 8px; }
+    header img { width: 32px; height: 32px; border-radius: 8px; background: white; padding: 2px; }
+    #btnMenu { background: white; color: #111; border: none; font-size: 22px; width: 48px; height: 48px; border-radius: 12px; cursor: pointer; }
+    nav { display: none; background: white; padding: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    nav.open { display: block; }
+    nav button { width: 100%; text-align: left; background: #f9fafb; border: none; padding: 16px; margin: 4px 0; border-radius: 12px; font-size: 17px; cursor: pointer; }
+    main { max-width: 720px; margin: 0 auto; padding: 16px; padding-bottom: 110px; }
+    .card { background: white; padding: 18px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .card h2 { margin-top: 0; font-size: 19px; }
+    label { font-weight: 600; font-size: 14px; display: block; margin-top: 6px; }
+    input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #d1d5db; font-size: 16px; background: white; }
+    .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 17px; font-weight: 700; cursor: pointer; margin: 6px 0; }
+    .btn-primary { background: #111827; color: white; }
+    .btn-green { background: #047857; color: white; }
+    .btn-excel { background: #217346; color: white; }
+    .btn-outline { background: white; color: #111827; border: 2px solid #111827; }
+    .item { padding: 14px 0; border-bottom: 1px solid #eee; }
+    .item:last-child { border-bottom: none; }
+    .mes { background: #eef2ff; padding: 12px; border-radius: 10px; margin: 6px 0; display: flex; justify-content: space-between; }
+    .sugerencia { background: #fffbeb; padding: 12px; border-radius: 10px; margin: 8px 0; font-size: 15px; line-height: 1.4; }
+    .seccion { display: none; }
+    .seccion.activa { display: block; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; border-top: 1px solid #ddd; padding: 6px; z-index: 10; }
+    .bottom-nav button { flex: 1; background: none; border: none; padding: 10px 1px; font-size: 11px; cursor: pointer; color: #666; }
+    .bottom-nav button.activo { color: #4f46e5; font-weight: bold; }
+    .tarjeta-card { border-radius: 16px; padding: 16px; margin-bottom: 14px; color: white; }
+    .tarjeta-visa { background: linear-gradient(135deg, #1a1f71, #2a3bb5); }
+    .tarjeta-amex { background: linear-gradient(135deg, #2e77bc, #5aa9e6); }
+    .tarjeta-master { background: linear-gradient(135deg, #eb001b, #f79e1b); }
+    .tarjeta-otra { background: linear-gradient(135deg, #111827, #4b5563); }
+    .tarjeta-efectivo { background: #ecfdf5; color: #111; border: 2px solid #047857; }
+    details summary { list-style: none; cursor: pointer; }
+    details summary::-webkit-details-marker { display: none; }
+    .chip { display: inline-block; padding: 8px 14px; border-radius: 99px; background: #eef2ff; margin: 4px 4px 4px 0; font-size: 14px; cursor: pointer; }
+    .chip.activo { background: #111827; color: white; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><img src="https://cdn-icons-png.flaticon.com/512/2331/2331966.png"> Mis Gastos</h1>
+  <button id="btnMenu" onclick="toggleMenu()">☰</button>
+</header>
+
+<nav id="menu">
+  <button onclick="irA('inicio')">🏠 Inicio / Agregar gasto</button>
+  <button onclick="irA('tarjetas')">💳 Mis Tarjetas</button>
+  <button onclick="irA('agregarTarjeta')">➕ Agregar Tarjeta</button>
+  <button onclick="irA('servicios')">🧾 Servicios mensuales</button>
+  <button onclick="irA('calendario')">📅 Calendario de cuotas</button>
+  <button onclick="irA('ia')">🤖 Organizador IA</button>
+  <button onclick="irA('lista')">📊 Todos los gastos</button>
+  <button onclick="exportarExcel()">⬇ Exportar a Excel</button>
+  <button onclick="exportarBackup()">💾 Descargar backup</button>
+</nav>
+
+<main>
+  <!-- INICIO - AGREGAR GASTO -->
+  <section id="seccion-inicio" class="seccion activa">
+    <div class="card">
+      <h2>Agregar gasto con cuotas</h2>
+      <label>¿Qué compraste?</label>
+      <input id="descripcion" placeholder="Ej: Supermercado">
+      <label>Monto total</label>
+      <input id="monto" type="number" inputmode="numeric" placeholder="120000">
+      <label>¿Con qué tarjeta?</label>
+      <select id="tarjeta"></select>
+      <p style="font-size:13px;color:#666;margin:-4px 0 8px;">¿No aparece tu tarjeta? <span style="color:#4f46e5;font-weight:700;cursor:pointer;" onclick="irA('agregarTarjeta')">Agregala acá →</span></p>
+      <label>Categoría</label>
+      <select id="categoria"><option>Comida</option><option>Casa</option><option>Transporte</option><option>Ropa</option><option>Ocio</option><option>Salud</option><option>Mascotas</option><option>Otros</option></select>
+      <label>Cuotas</label>
+      <input id="cuotas" type="number" value="1" min="1" max="24" inputmode="numeric">
+      <label>Fecha de compra</label>
+      <input id="fecha" type="date">
+      <button class="btn btn-primary" onclick="agregarGasto()">+ Agregar gasto</button>
+      <p style="font-size:13px;color:#666;text-align:center;">🔒 Solo en tu dispositivo. Sin internet.</p>
+    </div>
+    <div class="card">
+      <h2>💳 Resumen por tarjeta</h2>
+      <div id="resumenTarjetasInicio"></div>
+      <button class="btn btn-primary" onclick="irA('tarjetas')">Ver tarjetas por separado →</button>
+    </div>
+  </section>
+
+  <!-- AGREGAR TARJETA - PESTAÑA APARTE -->
+  <section id="seccion-agregarTarjeta" class="seccion">
+    <div class="card">
+      <h2>➕ Agregar nueva tarjeta</h2>
+      <p style="font-size:14px;color:#666;">Ej: Visa Galicia, Amex, Mastercard BBVA, etc. Después la elegís cuando agregás un gasto.</p>
+      <label>Nombre de la tarjeta</label>
+      <input id="nueva-nombre" placeholder="Ej: Visa Galicia, Amex, Mastercard BBVA">
+      <label>Banco / Emisor</label>
+      <input id="nueva-banco" placeholder="Ej: Galicia, BBVA, Santander, Naranja">
+      <label>Tipo</label>
+      <select id="nueva-tipo">
+        <option>Visa</option>
+        <option>American Express</option>
+        <option>Mastercard</option>
+        <option>Otra</option>
+        <option>Efectivo / Débito</option>
+      </select>
+      <label>Últimos 4 dígitos (opcional)</label>
+      <input id="nueva-digitos" placeholder="Ej: 1234" maxlength="4" inputmode="numeric">
+      <label>Límite de la tarjeta (opcional)</label>
+      <input id="nueva-limite" type="number" placeholder="Ej: 1000000" inputmode="numeric">
+      <label>Día de cierre (opcional)</label>
+      <input id="nueva-cierre" type="number" min="1" max="31" placeholder="Ej: 20" inputmode="numeric">
+      <label>Día de vencimiento (opcional)</label>
+      <input id="nueva-vencimiento" type="number" min="1" max="31" placeholder="Ej: 5" inputmode="numeric">
+      <button class="btn btn-primary" onclick="agregarTarjeta()">+ Guardar tarjeta</button>
+      <button class="btn btn-outline" onclick="irA('tarjetas')">Ver mis tarjetas →</button>
+    </div>
+    <div class="card">
+      <h2>Mis tarjetas guardadas</h2>
+      <div id="listaTarjetasSimple"></div>
+    </div>
+  </section>
+
+  <!-- MIS TARJETAS - DETALLE POR BANCO -->
+  <section id="seccion-tarjetas" class="seccion">
+    <div class="card">
+      <h2>💳 Mis Tarjetas - Independiente por banco</h2>
+      <p style="font-size:14px;color:#666;">Cada tarjeta con su total gastado, lo que falta y sus cuotas mes a mes.</p>
+      <div id="chipsTarjetas"></div>
+      <button class="btn btn-outline" onclick="irA('agregarTarjeta')">+ Agregar otra tarjeta</button>
+      <div id="listaTarjetas" style="margin-top:12px;"></div>
+    </div>
+  </section>
+
+  <!-- SERVICIOS -->
+  <section id="seccion-servicios" class="seccion">
+    <div class="card">
+      <h2>🧾 Servicios mensuales</h2>
+      <label>Servicio</label><input id="serv-nombre" placeholder="Ej: Netflix, Luz">
+      <label>Monto por mes</label><input id="serv-monto" type="number" inputmode="numeric" placeholder="15000">
+      <label>Día de vencimiento</label><input id="serv-dia" type="number" min="1" max="31" value="10" inputmode="numeric">
+      <label>Categoría</label>
+      <select id="serv-categoria"><option>Casa</option><option>Internet / Celular</option><option>Streaming</option><option>Transporte</option><option>Salud</option><option>Mascotas</option><option>Tarjeta</option><option>Préstamo</option><option>Yo</option><option>Otros</option></select>
+      <button class="btn btn-primary" onclick="agregarServicio()">+ Agregar servicio</button>
+    </div>
+    <div class="card"><h2>Mis servicios</h2><div id="listaServicios"></div><div id="totalServicios"></div></div>
+  </section>
+
+  <!-- CALENDARIO -->
+  <section id="seccion-calendario" class="seccion">
+    <div class="card"><h2>📅 Calendario de cuotas + servicios</h2><div id="calendario"></div></div>
+  </section>
+
+  <!-- IA -->
+  <section id="seccion-ia" class="seccion">
+    <div class="card"><h2>🤖 Organizador IA (offline)</h2><div id="iaBox">Analizando...</div><button class="btn btn-green" onclick="organizadorIA()">Volver a analizar</button></div>
+  </section>
+
+  <!-- LISTA -->
+  <section id="seccion-lista" class="seccion">
+    <div class="card"><h2>📊 Todos los gastos</h2><div id="lista"></div><button class="btn btn-excel" onclick="exportarExcel()">⬇ Exportar a Excel (CSV)</button><button class="btn btn-primary" onclick="exportarBackup()">💾 Descargar backup JSON</button></div>
+  </section>
+</main>
+
+<div class="bottom-nav">
+  <button onclick="irA('inicio')" id="nav-inicio" class="activo">🏠<br>Inicio</button>
+  <button onclick="irA('agregarTarjeta')" id="nav-agregarTarjeta">➕<br>Tarjeta</button>
+  <button onclick="irA('tarjetas')" id="nav-tarjetas">💳<br>Mis Tarjetas</button>
+  <button onclick="irA('servicios')" id="nav-servicios">🧾<br>Servicios</button>
+  <button onclick="irA('calendario')" id="nav-calendario">📅<br>Cuotas</button>
+  <button onclick="irA('ia')" id="nav-ia">🤖<br>IA</button>
+</div>
+
+<script src="app.js"></script>
+<script>
+  function toggleMenu(){ document.getElementById('menu').classList.toggle('open'); }
+  function irA(seccion){
+    document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('activa'));
+    document.getElementById('seccion-'+seccion).classList.add('activa');
+    document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('activo'));
+    document.getElementById('nav-'+seccion)?.classList.add('activo');
+    document.getElementById('menu').classList.remove('open');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.getElementById('fecha').valueAsDate = new Date();
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+</script>
+</body>
+</html>
