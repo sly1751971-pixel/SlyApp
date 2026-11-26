@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlyApp - Mis Tarjetas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+body{background:#f1f5f9;padding-bottom:90px;color:#1e293b}
+header{background:#0f172a;color:white;padding:18px;text-align:center;position:sticky;top:0;z-index:10}
+header h1{font-size:20px} header p{font-size:13px;opacity:.8}
+.container{max-width:520px;margin:0 auto;padding:14px}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+h2{font-size:17px;margin-bottom:10px} h3{font-size:15px;margin:14px 0 8px}
+label{font-size:13px;font-weight:600;display:block;margin-top:10px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;margin-top:4px;font-size:15px}
+textarea{min-height:180px}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px}
+.btn-green{background:#16a34a;color:white}.btn-blue{background:#2563eb;color:white}.btn-dark{background:#0f172a;color:white}.btn-gray{background:#e2e8f0;color:#334155}.btn-red{background:#dc2626;color:white}
+.fila{display:flex;gap:8px}.fila .btn{flex:1}
+.total{font-size:28px;font-weight:800}.mutual{font-size:13px;color:#64748b}
+.chip{display:inline-block;background:#e0e7ff;color:#3730a3;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin:2px}
+.chip-pagada{background:#dcfce7;color:#166534}.chip-hoy{background:#fef3c7;color:#92400e;border:2px solid #f59e0b}.chip-pend{background:#f1f5f9;color:#64748b}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.x{color:red;cursor:pointer;font-weight:800;padding:4px 10px}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;border-top:1px solid #e2e8f0;padding:6px;z-index:20}
+.bottom button{flex:1;background:none;border:none;padding:10px 2px;font-size:12px;cursor:pointer;color:#64748b}
+.bottom button.activo{color:#2563eb;font-weight:800}
+.mesBox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px}
+.alerta{background:#fef3c7;border:1px solid #fbbf24;padding:12px;border-radius:12px;font-size:14px}
+.badge{background:#16a34a;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-rojo{background:#dc2626}
+</style>
+</head>
+<body>
+<header><h1>💳 SlyApp</h1><p>Control de tarjetas • Cuotas • Fechas reales</p></header>
+<div class="container" id="app"></div>
+<nav class="bottom">
+<button onclick="mostrar('inicio')" id="b-inicio">🏠<br>Inicio</button>
+<button onclick="mostrar('tarjetas')" id="b-tarjetas">💳<br>Tarjetas</button>
+<button onclick="mostrar('agregar')" id="b-agregar">➕<br>Agregar</button>
+<button onclick="mostrar('resumen')" id="b-resumen">📄<br>Resumen</button>
+<button onclick="mostrar('calendario')" id="b-calendario">📅<br>Calendario</button>
+</nav>
+<script>
+let datos=JSON.parse(localStorage.getItem('slyapp_v13')||localStorage.getItem('slyapp_v12')||'{"tarjetas":[],"consumos":[]}');
+let vista='inicio';let resumenDetectado=[];
+function guardar(){localStorage.setItem('slyapp_v13',JSON.stringify(datos));}
+function formato(n){return '$ '+Number(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const MESES={enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
+const MESES_N=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function mesNombre(y,m){return MESES_N[m]+' '+y;}
+function mesClave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function parseFechaTexto(txt){
+  // "18 de noviembre" -> {dia:18, mes:10}
+  let m=txt.toLowerCase().match(/(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/);
+  if(!m) return null; return {dia:parseInt(m[1]),mes:MESES[m[2]]};
+}
+function fechaCompraDe(c){
+  // fechaInicio ya es la fecha de compra real
+  let d=new Date(c.fechaInicio+'T00:00:00');
+  return d.getDate()+' de '+MESES_L[d.getMonth()]+' '+d.getFullYear();
+}
+function cuotaDelMes(c,clave){
+  let inicio=new Date(c.fechaInicio+'T00:00:00');let [y,m]=clave.split('-').map(Number);
+  let dif=(y-inicio.getFullYear())*12+(m-1-inicio.getMonth());
+  if(dif<0||dif>=c.cuotas) return 0; return c.montoTotal/c.cuotas;
+}
+function totalMes(clave,tarjetaFiltro){return datos.consumos.filter(c=>!tarjetaFiltro||c.tarjeta===tarjetaFiltro).reduce((a,c)=>a+cuotaDelMes(c,clave),0);}
+function mostrar(v){vista=v;document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('activo'));let b=document.getElementById('b-'+v);if(b)b.classList.add('activo');render();}
+function mostrarPreview(){
+  const preview=document.getElementById('previewResumen');const tarjeta=document.getElementById('resumen-tarjeta').value;
+  preview.innerHTML=`<div style="margin-top:14px;background:#ecfdf5;padding:14px;border-radius:12px;"><b>✅ Detecté ${resumenDetectado.length} consumos en ${tarjeta}:</b>${resumenDetectado.map((r,i)=>{
+    let restantes=r.cuotas-r.cuotaActual+1;
+    return `<div style="padding:10px 0;border-bottom:1px solid #ddd;font-size:14px;"><div style="display:flex;justify-content:space-between"><span><b>${r.descripcion}</b><br><small>📅 Comprado: ${fechaCompraDe(r)} • Cuota ${r.cuotaActual} de ${r.cuotas}</small></span><span style="text-align:right"><b>${formato(r.valorCuota)} /mes</b><br><span style="color:red;cursor:pointer;font-size:13px;" onclick="quitarDeResumen(${i})">Quitar</span></span></div><div style="font-size:12px;margin-top:4px"><span class="badge ${restantes===1?'badge-rojo':''}">${restantes===1?'🔥 Última cuota':`Quedan ${restantes} cuotas`}</span> <span style="color:#666">Total ${formato(r.montoTotal)} • Termina ${mesNombre(new Date(new Date(r.fechaInicio+'T00:00:00').getFullYear(),new Date(r.fechaInicio+'T00:00:00').getMonth()+r.cuotas-1,1).getFullYear(),new Date(new Date(r.fechaInicio+'T00:00:00').getFullYear(),new Date(r.fechaInicio+'T00:00:00').getMonth()+r.cuotas-1,1).getMonth())}</span></div></div>`;
+  }).join('')}<div style="display:flex;justify-content:space-between;margin-top:10px;"><span><b>Total cuotas este mes:</b></span><b>${formato(resumenDetectado.reduce((a,r)=>a+r.valorCuota,0))}</b></div><button class="btn btn-green" onclick="importarResumen()">✅ Importar todo a ${tarjeta}</button><p style="font-size:13px;color:#666;">Se suma a lo que ya tenías. Si pegás 2 veces lo mismo, no duplica.</p></div>`;
+}
+function render(){
+  let el=document.getElementById('app');let hoy=new Date();let clave=mesClave(hoy);
+  if(vista==='inicio'){
+    let total=totalMes(clave);let prox=new Date(hoy.getFullYear(),hoy.getMonth()+1,1);let totalProx=totalMes(mesClave(prox));
+    el.innerHTML=`<div class="card"><p class="mutual">A pagar este mes • ${mesNombre(hoy.getFullYear(),hoy.getMonth())}</p><div class="total">${formato(total)}</div><p class="mutual">Mes que viene: <b>${formato(totalProx)}</b> • ${datos.tarjetas.length} tarjetas • ${datos.consumos.length} consumos</p><div class="fila"><button class="btn btn-green" onclick="mostrar('resumen')">📄 Pegar Resumen</button><button class="btn btn-blue" onclick="mostrar('agregar')">➕ Nuevo Consumo</button></div></div>
+    ${datos.tarjetas.map(t=>`<div class="card"><div style="display:flex;justify-content:space-between"><div><b>${t.nombre}</b><br><span class="mutual">${t.banco||''} •••• ${t.ultimos||''}</span></div><b>${formato(totalMes(clave,t.nombre))}</b></div><button class="btn btn-gray" onclick="verTarjeta('${t.nombre}')">Ver detalle mes a mes →</button></div>`).join('')||'<div class="card">Sin tarjetas. Tocá 💳 Tarjetas > ➕ Agregar Tarjeta > Visa Santander.</div>'}
+    <div class="card"><h2>📅 Próximos 6 meses</h2>${[0,1,2,3,4,5].map(i=>{let d=new Date(hoy.getFullYear(),hoy.getMonth()+i,1);return `<div class="item"><span>${mesNombre(d.getFullYear(),d.getMonth())}</span><b>${formato(totalMes(mesClave(d)))}</b></div>`}).join('')}</div>`;
+  }
+  if(vista==='tarjetas'){
+    el.innerHTML=`<div class="card"><h2>💳 Mis Tarjetas</h2>${datos.tarjetas.map(t=>`<div class="item"><div><b>${t.nombre}</b><br><span class="mutual">${t.banco||''} •••• ${t.ultimos||''}</span></div><div><button class="btn btn-gray" style="width:auto;padding:8px 12px;margin:0" onclick="verTarjeta('${t.nombre}')">Ver</button> <span class="x" onclick="borrarTarjeta('${t.nombre}')">✕</span></div></div>`).join('')||'Sin tarjetas'}<button class="btn btn-blue" onclick="mostrar('agregarTarjeta')">➕ Agregar Tarjeta</button></div>`;
+  }
+  if(vista==='agregarTarjeta'){
+    el.innerHTML=`<div class="card"><h2>➕ Nueva Tarjeta</h2><label>Nombre (ej: Visa Santander)</label><input id="nt-nombre" placeholder="Visa Santander"><label>Banco</label><input id="nt-banco" placeholder="Santander"><label>Últimos 4</label><input id="nt-ultimos" placeholder="2688"><label>Cierre</label><input id="nt-cierre" type="number" placeholder="25"><label>Vencimiento</label><input id="nt-vencimiento" type="number" placeholder="5"><button class="btn btn-green" onclick="crearTarjeta()">Guardar</button><button class="btn btn-gray" onclick="mostrar('tarjetas')">Volver</button></div>`;
+  }
+  if(vista==='agregar'){
+    el.innerHTML=`<div class="card"><h2>➕ Cargar Consumo Manual</h2><p class="mutual">Usalo cuando comprás algo nuevo y querés que se sume a lo del resumen.</p><label>Tarjeta</label><select id="c-tarjeta">${datos.tarjetas.map(t=>`<option value="${t.nombre}">${t.nombre}</option>`).join('')||'<option value="">Creá primero una tarjeta</option>'}</select><label>¿Qué compraste?</label><input id="c-desc" placeholder="Ej: Zapatillas"><label>Monto total</label><input id="c-monto" type="number" placeholder="60000"><label>Cuotas</label><input id="c-cuotas" type="number" value="1"><label>Fecha de compra</label><input id="c-fecha" type="date"><label>Categoría</label><select id="c-cat"><option>Otros</option><option>Supermercado</option><option>Farmacia</option><option>Ropa</option><option>Combustible</option><option>Servicios</option><option>Salud</option><option>Ocio</option></select><button class="btn btn-green" onclick="agregarConsumo()">Guardar y sumar</button></div>`;
+  }
+  if(vista==='resumen'){
+    el.innerHTML=`<div class="card"><h2>📄 Pegar Resumen Santander</h2><div class="alerta">Pegá TODO junto, aunque tenga Silvina + Tulio. Si es la misma cuenta, elegí <b>UNA</b> sola: <b>Visa Santander</b>.<br><br>Ahora detecta: <b>fecha de compra, cuota actual, cuotas restantes y mes que termina</b>.</div><label>¿De qué tarjeta es?</label><select id="resumen-tarjeta">${datos.tarjetas.map(t=>`<option value="${t.nombre}">${t.nombre}</option>`).join('')||'<option value="">Creá primero una tarjeta</option>'}</select><label>Pegá acá el texto del resumen</label><textarea id="resumen-texto" placeholder="Pegá acá todo el texto copiado del banco..."></textarea><button class="btn btn-blue" onclick="analizarResumen()">🔍 Analizar resumen</button><div id="previewResumen"></div><button class="btn btn-gray" onclick="document.getElementById('resumen-texto').value='';document.getElementById('previewResumen').innerHTML=''">Limpiar</button></div><div class="card"><h3>¿Y si después compro algo más?</h3><p style="font-size:14px;line-height:1.5">No hace falta pegar todo de nuevo. Tenés 2 opciones:<br>1. <b>➕ Agregar</b> arriba: cargás solo ese consumo nuevo<br>2. <b>📄 Resumen</b>: pegás solo el resumen nuevo, se suma sin borrar lo anterior</p></div>`;
+  }
+  if(vista==='calendario'){
+    el.innerHTML=`<div class="card"><h2>📅 Calendario Mes a Mes</h2>${[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>{let d=new Date(hoy.getFullYear(),hoy.getMonth()+i,1);let k=mesClave(d);let cons=datos.consumos.filter(c=>cuotaDelMes(c,k)>0);return `<div class="mesBox"><div style="display:flex;justify-content:space-between"><b>${mesNombre(d.getFullYear(),d.getMonth())}</b><b>${formato(totalMes(k))}</b></div>${cons.map(c=>{let inicio=new Date(c.fechaInicio+'T00:00:00');let num=(d.getFullYear()-inicio.getFullYear())*12+(d.getMonth()-inicio.getMonth())+1;return `<div style="font-size:13px;display:flex;justify-content:space-between;padding:4px 0"><span>${c.descripcion} • Cuota ${num}/${c.cuotas} • ${c.tarjeta}</span><span>${formato(c.montoTotal/c.cuotas)}</span></div>`}).join('')||'<p class="mutual">Sin cuotas</p>'}</div>`}).join('')}</div>`;
+  }
+  if(vista.startsWith('detalle_')){
+    let nombre=vista.replace('detalle_','');let cons=datos.consumos.filter(c=>c.tarjeta===nombre);
+    el.innerHTML=`<div class="card"><h2>${nombre}</h2><p class="mutual">${cons.length} consumos • Este mes: ${formato(totalMes(clave,nombre))}</p><button class="btn btn-gray" onclick="mostrar('tarjetas')">← Volver</button></div>${cons.map(c=>{
+      let globalIdx=datos.consumos.indexOf(c);let inicio=new Date(c.fechaInicio+'T00:00:00');
+      let cuotaHoy=(hoy.getFullYear()-inicio.getFullYear())*12+(hoy.getMonth()-inicio.getMonth())+1;
+      let restantes=Math.max(0,c.cuotas-cuotaHoy+1);let pagadas=Math.max(0,Math.min(cuotaHoy-1,c.cuotas));
+      let fin=new Date(inicio.getFullYear(),inicio.getMonth()+c.cuotas-1,1);
+      return `<div class="card"><div style="display:flex;justify-content:space-between"><div><b>${c.descripcion}</b><br><span class="mutual">📅 Comprado: ${fechaCompraDe(c)} • Total ${formato(c.montoTotal)}</span><br><span style="font-size:13px"><b>Cuota ${Math.min(cuotaHoy,c.cuotas)} de ${c.cuotas}</b> • ${formato(c.montoTotal/c.cuotas)} por mes • <span class="badge ${restantes===1?'badge-rojo':''}">${restantes===0?'✅ Terminado':restantes===1?'🔥 Última cuota':'Quedan '+restantes+' cuotas'}</span> • Termina ${mesNombre(fin.getFullYear(),fin.getMonth())}</span></div><span class="x" onclick="borrarConsumo(${globalIdx})">✕</span></div><div style="margin-top:10px;font-size:13px"><b>Mes a mes:</b><br>${Array.from({length:c.cuotas},(_,i)=>{let d=new Date(inicio.getFullYear(),inicio.getMonth()+i,1);let num=i+1;let estado=num<cuotaHoy?'✅ Pagada':num===cuotaHoy?'🟡 Este mes':'⏳ Pendiente';let cls=num<cuotaHoy?'chip-pagada':num===cuotaHoy?'chip-hoy':'chip-pend';return `<span class="chip ${cls}">${mesNombre(d.getFullYear(),d.getMonth())} • Cuota ${num} • ${formato(c.montoTotal/c.cuotas)} • ${estado}</span>`}).join('')}</div></div>`;
+    }).join('')||'<div class="card">Sin consumos. Pegá tu resumen en 📄 Resumen.</div>'}`;
+  }
+}
+function verTarjeta(n){vista='detalle_'+n;render();window.scrollTo(0,0);}
+function crearTarjeta(){let nombre=document.getElementById('nt-nombre').value.trim();if(!nombre) return alert('Poné nombre, ej: Visa Santander');if(datos.tarjetas.find(t=>t.nombre===nombre)) return alert('Ya existe');datos.tarjetas.push({nombre,banco:document.getElementById('nt-banco').value,ultimos:document.getElementById('nt-ultimos').value,cierre:document.getElementById('nt-cierre').value,vencimiento:document.getElementById('nt-vencimiento').value});guardar();mostrar('tarjetas');}
+function borrarTarjeta(n){if(!confirm('¿Borrar '+n+' y sus consumos?'))return;datos.tarjetas=datos.tarjetas.filter(t=>t.nombre!==n);datos.consumos=datos.consumos.filter(c=>c.tarjeta!==n);guardar();render();}
+function agregarConsumo(){let tarjeta=document.getElementById('c-tarjeta').value;let desc=document.getElementById('c-desc').value.trim();let monto=parseFloat(document.getElementById('c-monto').value);let cuotas=parseInt(document.getElementById('c-cuotas').value)||1;let fecha=document.getElementById('c-fecha').value||new Date().toISOString().slice(0,10);if(!tarjeta||!desc||!monto) return alert('Completá tarjeta, descripción y monto');datos.consumos.push({descripcion:desc,montoTotal:monto,tarjeta,categoria:document.getElementById('c-cat').value,cuotas,fechaInicio:fecha,cuotaActual:1,valorCuota:monto/cuotas});guardar();alert('✅ Guardado! Ya se sumó a tus cuotas.');mostrar('inicio');}
+function borrarConsumo(i){if(!confirm('¿Borrar este consumo?'))return;datos.consumos.splice(i,1);guardar();render();}
+function analizarResumen(){
+  const texto=document.getElementById('resumen-texto').value.trim();const tarjeta=document.getElementById('resumen-tarjeta').value;const preview=document.getElementById('previewResumen');
+  if(!texto) return alert('Pegá primero el resumen');if(!tarjeta) return alert('Elegí la tarjeta');
+  resumenDetectado=[];const lineas=texto.split('\n').map(l=>l.trim()).filter(l=>l!=='');
+  let descActual='';let cuotaActual=1,cuotasTotales=1;let esperandoMonto=false;let fechaActualTxt='';let fechaActualObj=null;
+  const ignorar=['subtotal','otros conceptos','db iva','adicional de','visa crédito terminada','2026','u$s','$ 0,00'];
+  for(let i=0;i<lineas.length;i++){
+    let linea=lineas[i];let lineaBaja=linea.toLowerCase();
+    if(ignorar.some(x=>lineaBaja.includes(x))) continue;
+    let pf=parseFechaTexto(linea);
+    if(pf){fechaActualTxt=linea;fechaActualObj=pf;continue;}
+    if(linea==='$'||linea==='U$S') continue;
+    let mCuota=linea.match(/cuota\s*(\d{1,2})\s*de\s*(\d{1,2})/i);
+    if(mCuota){cuotaActual=parseInt(mCuota[1]);cuotasTotales=parseInt(mCuota[2]);esperandoMonto=true;continue;}
+    let mUnaLinea=linea.match(/^(.+?)\s+(\d{1,2})\/(\d{1,2})\s+\$?\s*(-?[\d\.]+,?\d*)$/);
+    if(mUnaLinea && !esperandoMonto){
+      let monto=parseFloat(mUnaLinea[4].replace(/\./g,'').replace(',','.'));if(monto>0){
+        let hoy=new Date();let cA=parseInt(mUnaLinea[2]);let cT=parseInt(mUnaLinea[3]);
+        let baseFecha=fechaActualObj?new Date(hoy.getFullYear(),fechaActualObj.mes,fechaActualObj.dia):hoy;
+        let fechaInicio=new Date(baseFecha.getFullYear(),baseFecha.getMonth()-(cA-1),baseFecha.getDate());
+        resumenDetectado.push({descripcion:mUnaLinea[1].slice(0,40),montoTotal:monto*cT,tarjeta,categoria:'Otros',cuotas:cT,fechaInicio:fechaInicio.toISOString().slice(0,10),cuotaActual:cA,valorCuota:monto,fechaTexto:fechaActualTxt});
+      } continue;
+    }
+    let mMonto=linea.match(/^\$?\s*(-?[\d\.]+,\d{2})$/);
+    if(mMonto||(linea.match(/^-?[\d\.]+,\d{2}$/)&&esperandoMonto)){
+      let monto=parseFloat((mMonto?mMonto[1]:linea).replace(/\./g,'').replace(',','.'));
+      if(!monto||monto<=0){esperandoMonto=false;descActual='';continue;}
+      if(!descActual) descActual='Consumo '+tarjeta;
+      let hoy=new Date();
+      // Fecha de compra real = fecha del renglón - (cuotaActual-1) meses
+      let baseFecha=fechaActualObj?new Date(hoy.getFullYear(),fechaActualObj.mes,fechaActualObj.dia):hoy;
+      // Si la fecha del resumen es de un mes futuro respecto a hoy (ej: resumen de noviembre y hoy es noviembre, ok). Si fechaActual es Dic y hoy es Nov, es del año pasado.
+      let fechaInicio=new Date(baseFecha.getFullYear(),baseFecha.getMonth()-(cuotaActual-1),baseFecha.getDate());
+      resumenDetectado.push({descripcion:descActual.slice(0,40),montoTotal:monto*cuotasTotales,tarjeta,categoria:'Otros',cuotas:cuotasTotales,fechaInicio:fechaInicio.toISOString().slice(0,10),cuotaActual,valorCuota:monto,fechaTexto:fechaActualTxt});
+      descActual='';cuotaActual=1;cuotasTotales=1;esperandoMonto=false;continue;
+    }
+    if(!esperandoMonto){descActual=linea;} else {descActual=linea;cuotaActual=1;cuotasTotales=1;esperandoMonto=false;}
+  }
+  if(!resumenDetectado.length){preview.innerHTML=`<p style="color:red;margin-top:10px;">No detecté nada. Pegá con formato Santander.</p>`;return;}
+  mostrarPreview();
+}
+function quitarDeResumen(i){resumenDetectado.splice(i,1);if(!resumenDetectado.length){document.getElementById('previewResumen').innerHTML='';return;}mostrarPreview();}
+function importarResumen(){
+  if(!resumenDetectado.length) return alert('No hay nada');
+  let nuevos=0;
+  resumenDetectado.forEach(r=>{
+    let existe=datos.consumos.some(c=>c.tarjeta===r.tarjeta && c.descripcion===r.descripcion && Math.abs(c.montoTotal-r.montoTotal)<1 && c.cuotas===r.cuotas && c.fechaInicio===r.fechaInicio);
+    if(!existe){datos.consumos.push(r);nuevos++;}
+  });
+  guardar();alert('✅ Se sumaron '+nuevos+' consumos nuevos. '+(resumenDetectado.length-nuevos>0?(resumenDetectado.length-nuevos)+' ya estaban, no se duplicaron.':''));resumenDetectado=[];mostrar('inicio');
+}
+mostrar('inicio');
+</script>
+</body>
+</html>
