@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlyApp - Mis Finanzas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+body{background:#f1f5f9;padding-bottom:115px;color:#1e293b}
+header{background:#0f172a;color:white;padding:18px;text-align:center;position:sticky;top:0;z-index:10;cursor:pointer;user-select:none}
+header h1{font-size:20px} header p{font-size:13px;opacity:.8}
+.container{max-width:520px;margin:0 auto;padding:14px}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+h2{font-size:17px;margin-bottom:10px} h3{font-size:15px;margin:14px 0 8px}
+label{font-size:13px;font-weight:600;display:block;margin-top:10px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;margin-top:4px;font-size:15px;background:white}
+textarea{min-height:180px}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px}
+.btn-green{background:#16a34a;color:white}.btn-blue{background:#2563eb;color:white}.btn-gray{background:#e2e8f0;color:#334155}.btn-orange{background:#ea580c;color:white}.btn-purple{background:#7c3aed;color:white}.btn-red{background:#dc2626;color:white}.btn-dark{background:#0f172a;color:white}
+.fila{display:flex;gap:8px}.fila .btn{flex:1}
+.total{font-size:28px;font-weight:800}.mutual{font-size:13px;color:#64748b}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;gap:8px}
+.x{color:red;cursor:pointer;font-weight:800;padding:6px 10px;font-size:18px;flex-shrink:0}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;overflow-x:auto;border-top:2px solid #2563eb;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:999;box-shadow:0 -2px 10px rgba(0,0,0,.1);scrollbar-width:none}
+.bottom::-webkit-scrollbar{display:none}
+.bottom button{flex:1;min-width:62px;background:none;border:none;padding:8px 2px;font-size:12px;cursor:pointer;color:#64748b;line-height:1.2;white-space:nowrap}
+.bottom button.activo{color:#2563eb;font-weight:800;background:#eff6ff;border-radius:10px}
+.mesBox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px}
+.alerta{background:#fef3c7;border:1px solid #fbbf24;padding:12px;border-radius:12px;font-size:14px;line-height:1.5}
+.alerta-verde{background:#dcfce7;border:1px solid #16a34a;padding:12px;border-radius:12px;font-size:14px;line-height:1.5}
+.alerta-azul{background:#eff6ff;border:1px solid #2563eb;padding:12px;border-radius:12px;font-size:14px;line-height:1.5}
+.badge{background:#16a34a;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-rojo{background:#dc2626;color:white;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:800}
+.badge-naranja{background:#ea580c;color:white;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:800}
+.badge-gris{background:#64748b;color:white;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:700}
+.cuotaRow{display:flex;justify-content:space-between;gap:8px;padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;align-items:center}
+.cuotaRow:last-child{border:none}
+.cuotaRow.destacada{background:#fef3c7;border-left:4px solid #ea580c;border-radius:8px}
+.cuotaRow.ultima{background:#fee2e2;border-left:4px solid #dc2626;border-radius:8px}
+.saldoBox{display:flex;gap:8px;margin-top:10px}
+.saldoBox div{flex:1;background:#f8fafc;border-radius:12px;padding:10px;text-align:center}
+.debug{background:#0f172a;color:#a7f3d0;padding:10px;border-radius:10px;font-size:12px;white-space:pre-wrap;word-break:break-word;margin-top:10px}
+.resumenCuotas{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.resumenCuotas span{padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700}
+</style>
+</head>
+<body>
+<header onclick="tocarTitulo()"><h1>💳 SlyApp</h1><p>Ingresos • Gastos • Tarjetas • Cuotas</p></header>
+<div class="container" id="app"></div>
+<nav class="bottom">
+<button onclick="mostrar('inicio')" id="b-inicio">🏠<br>Inicio</button>
+<button onclick="mostrar('ingresos')" id="b-ingresos">💰<br>Ingresos</button>
+<button onclick="mostrar('gastos')" id="b-gastos">🧾<br>Gastos</button>
+<button onclick="mostrar('tarjetas')" id="b-tarjetas">💳<br>Tarjetas</button>
+<button onclick="mostrar('agregar')" id="b-agregar">➕<br>Agregar</button>
+<button onclick="mostrar('resumen')" id="b-resumen">📄<br>Resumen</button>
+<button onclick="mostrar('calendario')" id="b-calendario">📅<br>Calendario</button>
+</nav>
+<script>
+function cargarTodo(){
+  let base={tarjetas:[],consumos:[],ingresos:[],gastos:[],cierre:'19/11/2026',vencimiento:'01/12/2026',proxCierre:'23/12/2026',proxVencimiento:'04/01/2027',cierres:[],tarjetasOcultas:[],consumosOcultos:[],pin:'1234'};
+  ['slyapp_v28','slyapp_v27','slyapp_v26','slyapp_v25','slyapp_v24','slyapp_v23'].forEach(k=>{
+    try{let d=JSON.parse(localStorage.getItem(k)||'null');if(!d) return;
+      if(d.tarjetas&&d.tarjetas.length>base.tarjetas.length) base.tarjetas=d.tarjetas;
+      if(d.consumos&&d.consumos.length>base.consumos.length) base.consumos=d.consumos;
+      if(d.ingresos&&d.ingresos.length>base.ingresos.length) base.ingresos=d.ingresos;
+      if(d.gastos&&d.gastos.length>base.gastos.length) base.gastos=d.gastos;
+      if(d.cierre) base.cierre=d.cierre; if(d.vencimiento) base.vencimiento=d.vencimiento;
+      if(d.proxCierre) base.proxCierre=d.proxCierre; if(d.proxVencimiento) base.proxVencimiento=d.proxVencimiento;
+      if(d.cierres&&d.cierres.length) base.cierres=d.cierres;
+      if(d.tarjetasOcultas) base.tarjetasOcultas=d.tarjetasOcultas;
+      if(d.consumosOcultos) base.consumosOcultos=d.consumosOcultos;
+      if(d.pin) base.pin=d.pin;
+    }catch(e){}
+  });
+  if(!base.cierres.length) base.cierres=[{cierre:base.cierre,vencimiento:base.vencimiento},{cierre:base.proxCierre,vencimiento:base.proxVencimiento}];
+  base.gastos.forEach(g=>{if(!g.categoria) g.categoria='Gastos generales';});
+  base.consumos.forEach(c=>{if(c.fechaTexto&&c.cuotaActual&&c.cuotaActual>1&&!c.corregidoV27){c.fechaCompraReal=c.fechaTexto;let dia=parseInt(c.fechaTexto.split('/')[0]);let inicio=new Date(2026,10-(c.cuotaActual-1),dia);c.fechaInicio=inicio.toISOString().slice(0,10);c.corregidoV27=true;}});
+  base.ingresos.forEach(i=>{if(!i.fecha) i.fecha='';});
+  return base;
+}
+let datos=cargarTodo();
+let vista='inicio';let resumenDetectado=[];let toquesTitulo=0;let desbloqueado=false;
+function guardar(){localStorage.setItem('slyapp_v29',JSON.stringify(datos));}
+function formato(n){return '$ '+Number(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const MESES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_N=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function mesNombre(y,m){return MESES_N[m]+' '+y;}
+function mesNombreLargo(y,m){return MESES_L[m]+' '+y;}
+function mesClave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function mesClaveDeFecha(f){if(!f) return null;return mesClave(new Date(f+'T00:00:00'));}
+function fechaCompraDe(c){if(c.fechaCompraReal){let p=c.fechaCompraReal.split('/');if(p.length===3) return parseInt(p[0])+' de '+MESES_L[parseInt(p[1])-1]+' '+p[2];}let d=new Date(c.fechaInicio+'T00:00:00');return d.getDate()+' de '+MESES_L[d.getMonth()]+' '+d.getFullYear();}
+function cuotaDelMes(c,clave){let inicio=new Date(c.fechaInicio+'T00:00:00');let [y,m]=clave.split('-').map(Number);let dif=(y-inicio.getFullYear())*12+(m-1-inicio.getMonth());if(dif<0||dif>=c.cuotas) return 0;return c.montoTotal/c.cuotas;}
+function numeroCuotaEnMes(c,y,m){let inicio=new Date(c.fechaInicio+'T00:00:00');return (y-inicio.getFullYear())*12+(m-inicio.getMonth())+1;}
+function quedanEnMes(c,y,m){return Math.max(0,c.cuotas-numeroCuotaEnMes(c,y,m)+1);}
+function totalMes(clave,tarjetaFiltro){return datos.consumos.filter(c=>!tarjetaFiltro||c.tarjeta===tarjetaFiltro).reduce((a,c)=>a+cuotaDelMes(c,clave),0);}
+function ingresosDelMes(clave){return datos.ingresos.filter(i=>{if(!i.fecha) return true;return mesClaveDeFecha(i.fecha)===clave;});}
+function totalIngresosMes(clave){if(!clave) clave=mesClave(new Date());return ingresosDelMes(clave).reduce((a,i)=>a+(parseFloat(i.monto)||0),0);}
+function totalGastosMes(){return datos.gastos.reduce((a,g)=>a+(parseFloat(g.monto)||0),0);}
+function totalGastosPorCat(cat){return datos.gastos.filter(g=>(g.categoria||'Gastos generales')===cat).reduce((a,g)=>a+(parseFloat(g.monto)||0),0);}
+function parseFechaCorta(s){if(!s) return null;let p=s.split('/');if(p.length!==3) return null;return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));}
+function cierreDeMes(y,m){let e=datos.cierres.find(c=>{let f=parseFechaCorta(c.cierre);return f&&f.getFullYear()===y&&f.getMonth()===m;});if(e) return e.cierre;if(y===2026&&m===10) return datos.cierre;if(y===2026&&m===11) return datos.proxCierre;return 'Sin cargar';}
+function vencimientoDeMes(y,m){let e=datos.cierres.find(c=>{let f=parseFechaCorta(c.cierre);return f&&f.getFullYear()===y&&f.getMonth()===m;});if(e) return e.vencimiento;if(y===2026&&m===10) return datos.vencimiento;if(y===2026&&m===11) return datos.proxVencimiento;return 'Sin cargar';}
+function gastosDelMes(y,m){return datos.gastos.filter(g=>{if(!g.fecha) return y===new Date().getFullYear()&&m===new Date().getMonth();let f=new Date(g.fecha+'T00:00:00');return f.getFullYear()===y&&f.getMonth()===m;});}
+function totalGastosDelMes(y,m){return gastosDelMes(y,m).reduce((a,g)=>a+(parseFloat(g.monto)||0),0);}
+function serviciosAgrupados(){let map={};datos.gastos.filter(g=>g.categoria==='Servicios').forEach(g=>{if(!map[g.descripcion]) map[g.descripcion]=[];map[g.descripcion].push(g);});return map;}
+// PESTAÑA OCULTA: tocar 3 veces el título arriba, pide código. Código inicial 1234, lo cambiás adentro.
+function tocarTitulo(){toquesTitulo++;if(toquesTitulo>=3){toquesTitulo=0;pedirCodigo();}setTimeout(()=>{toquesTitulo=0;},1500);}
+function pedirCodigo(){let c=prompt('🔒 Pestaña oculta - Otras tarjetas\nIngresá el código:');if(c===null) return;if(c===datos.pin){desbloqueado=true;vista='ocultas';render();window.scrollTo(0,0);}else alert('❌ Código incorrecto');}
+function mostrar(v){vista=v;document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('activo'));let b=document.getElementById('b-'+v);if(b)b.classList.add('activo');render();window.scrollTo(0,0);}
+function badgeCuotas(c,y,m){let num=numeroCuotaEnMes(c,y,m);let quedan=quedanEnMes(c,y,m);if(quedan===1) return `<span class="badge-rojo">🔥 ÚLTIMA CUOTA - Cuota ${num} de ${c.cuotas}</span>`;if(quedan===2) return `<span class="badge-naranja">⚠️ Quedan 2 cuotas - Cuota ${num} de ${c.cuotas}</span>`;if(quedan<=4) return `<span class="badge-naranja">Quedan ${quedan} cuotas - Cuota ${num} de ${c.cuotas}</span>`;return `<span class="badge-gris">Quedan ${quedan} cuotas - Cuota ${num} de ${c.cuotas}</span>`;}
+function mostrarPreview(){
+  const preview=document.getElementById('previewResumen');
+  preview.innerHTML=`<div style="margin-top:14px;background:#ecfdf5;padding:14px;border-radius:12px;"><div class="alerta-verde"><b>Este resumen: cerrado ${datos.cierre} • VENCE ${datos.vencimiento}</b><br>Total a pagar el ${datos.vencimiento}: <b>${formato(resumenDetectado.reduce((a,r)=>a+r.valorCuota,0))}</b></div><div class="alerta-azul" style="margin-top:8px"><b>Próximo: cierra ${datos.proxCierre} • Vence ${datos.proxVencimiento}</b></div><b>✅ Detecté ${resumenDetectado.length} consumos:</b>${resumenDetectado.map((r,i)=>{let restantes=r.cuotas-r.cuotaActual+1;return `<div style="padding:10px 0;border-bottom:1px solid #ddd;font-size:14px;"><div style="display:flex;justify-content:space-between"><span><b>${r.descripcion}</b><br><small>📅 Comprado: <b>${fechaCompraDe(r)}</b> • Cuota ${r.cuotaActual} de ${r.cuotas}</small></span><span style="text-align:right"><b>${formato(r.valorCuota)}</b><br><span style="color:red;cursor:pointer;font-size:13px;" onclick="quitarDeResumen(${i})">Quitar</span></span></div><div style="font-size:12px;margin-top:4px"><span class="badge ${restantes===1?'badge-rojo':''}">${restantes===1?'🔥 Última cuota':'Quedan '+restantes+' cuotas'}</span> <span style="color:#666">Total ${formato(r.montoTotal)}</span></div></div>`}).join('')}<button class="btn btn-green" onclick="importarResumen()">✅ Importar todo</button></div>`;
+}
+function render(){
+  let el=document.getElementById('app');let hoy=new Date();let clave=mesClave(hoy);
+  let claveProx=mesClave(new Date(hoy.getFullYear(),hoy.getMonth()+1,1));
+  if(vista==='ocultas'){
+    if(!desbloqueado){el.innerHTML=`<div class="card"><h2>🔒 Pestaña oculta</h2><p class="mutual">Tocá 3 veces el título SlyApp arriba e ingresá el código.</p><button class="btn btn-dark" onclick="pedirCodigo()">🔒 Ingresar con código</button><button class="btn btn-gray" onclick="mostrar('inicio')">Volver</button></div>`;return;}
+    el.innerHTML=`<div class="card"><h2>🔒 Otras tarjetas - Oculta</h2><p class="mutual">Estas tarjetas NO aparecen en Inicio, ni en Calendario, ni en el total. Solo acá.</p><div class="alerta">Código actual: <b>${datos.pin}</b> - Cambialo abajo si querés.</div><label>Cambiar código de desbloqueo</label><input id="nuevo-pin" placeholder="Ej: 2611" maxlength="6"><button class="btn btn-dark" onclick="cambiarPin()">🔒 Cambiar código</button></div>
+    <div class="card"><h2>➕ Agregar otra tarjeta oculta</h2><label>Nombre de la tarjeta</label><input id="oc-nombre" placeholder="Ej: Visa Banco X"><label>Banco</label><input id="oc-banco" placeholder="Banco"><label>Últimos 4</label><input id="oc-ultimos" placeholder="1234"><button class="btn btn-green" onclick="agregarTarjetaOculta()">Guardar tarjeta oculta</button></div>
+    ${datos.tarjetasOcultas.map((t,ti)=>{let cons=datos.consumosOcultos.filter(c=>c.tarjeta===t.nombre);let tot=cons.reduce((a,c)=>a+(c.montoTotal/c.cuotas),0);return `<div class="card"><div style="display:flex;justify-content:space-between"><div><b>${t.nombre}</b><br><span class="mutual">${t.banco||''} •••• ${t.ultimos||''} • ${cons.length} consumos • Este mes ${formato(tot)}</span></div><span class="x" onclick="borrarTarjetaOculta(${ti})">✕</span></div><label>Consumo en ${t.nombre}</label><input id="oc-desc-${ti}" placeholder="Ej: Farmacity"><label>Monto total</label><input id="oc-monto-${ti}" type="number" placeholder="60000"><label>Cuotas</label><input id="oc-cuotas-${ti}" type="number" value="1"><label>Fecha de compra</label><input id="oc-fecha-${ti}" type="date"><button class="btn btn-blue" onclick="agregarConsumoOculto(${ti})">➕ Agregar consumo a esta tarjeta oculta</button>${cons.map(c=>{let idx=datos.consumosOcultos.indexOf(c);return `<div class="item"><div><b>${c.descripcion}</b><br><span class="mutual">📅 ${c.fechaInicio} • ${c.cuotas} cuotas • ${formato(c.montoTotal/c.cuotas)} por mes</span></div><div><b>${formato(c.montoTotal)}</b> <span class="x" onclick="borrarConsumoOculto(${idx})">✕</span></div></div>`}).join('')||'<p class="mutual">Sin consumos en esta tarjeta.</p>'}</div>`}).join('')||'<div class="card"><p class="mutual">Sin tarjetas ocultas todavía.</p></div>'}
+    <div class="card"><button class="btn btn-gray" onclick="desbloqueado=false;mostrar('inicio')">🔒 Cerrar pestaña oculta y volver a Inicio</button></div>`;
+    return;
+  }
+  if(vista==='inicio'){
+    let totalTarj=totalMes(clave);let totalProx=totalMes(claveProx);let totIng=totalIngresosMes(clave);let totIngProx=totalIngresosMes(claveProx);let totGasMes=totalGastosDelMes(hoy.getFullYear(),hoy.getMonth());let totGas=totalGastosMes();let saldo=totIng-totalTarj-totGasMes;
+    let cats=[...new Set(datos.gastos.map(g=>g.categoria||'Gastos generales'))];
+    let sueldosMes=ingresosDelMes(clave);
+    el.innerHTML=`<div class="card"><div class="alerta-verde" style="text-align:center"><b style="font-size:16px">🧾 A PAGAR EL ${datos.vencimiento.toUpperCase()}</b><br><span style="font-size:13px">Resumen TARJETA cerrado ${datos.cierre} - solo tarjetas</span></div><div class="total" style="text-align:center;margin-top:8px">${formato(totalTarj)}</div><p class="mutual" style="text-align:center">Tarjetas ${formato(totalTarj)} + Gastos de ${mesNombre(hoy.getFullYear(),hoy.getMonth())} ${formato(totGasMes)} = <b>Total a cubrir ${formato(totalTarj+totGasMes)}</b><br>Saldo que te queda: <b style="color:${saldo>=0?'#16a34a':'#dc2626'}">${formato(saldo)}</b></p><div class="alerta-azul" style="margin-top:10px;text-align:center"><b>📅 PRÓXIMO CIERRE TARJETA: ${datos.proxCierre} • VENCE ${datos.proxVencimiento}</b><br>En diciembre vas a pagar en tarjetas: <b>${formato(totalProx)}</b></div><div class="saldoBox"><div><small>💰 Sueldo ${mesNombre(hoy.getFullYear(),hoy.getMonth())}</small><br><b style="color:#16a34a">${formato(totIng)}</b></div><div><small>💳 Tarjetas</small><br><b style="color:#dc2626">-${formato(totalTarj)}</b></div><div><small>🧾 Gastos mes</small><br><b style="color:#ea580c">-${formato(totGasMes)}</b></div></div><div class="fila"><button class="btn btn-green" onclick="mostrar('resumen')">📄 Pegar Resumen Tarjeta</button><button class="btn btn-blue" onclick="mostrar('agregar')">➕ Nuevo Consumo</button></div><button class="btn btn-green" onclick="mostrar('ingresos')">💰 Cargar sueldo con fecha →</button><button class="btn btn-orange" onclick="mostrar('gastos')">🧾 Agregar gasto de noviembre →</button></div>
+    <div class="card"><h2>💰 Sueldos - ${mesNombreLargo(hoy.getFullYear(),hoy.getMonth())}</h2>${sueldosMes.map(i=>`<div class="item"><div><b>${i.descripcion}</b><br><span class="mutual">📅 ${i.fecha?new Date(i.fecha+'T00:00:00').toLocaleDateString('es-AR'):'Fijo mensual'}</span></div><div><b style="color:#16a34a">${formato(i.monto)}</b></div></div>`).join('')||'<p class="mutual">Sin sueldo este mes.</p>'}<p class="mutual"><b>Total sueldo: ${formato(totIng)}</b></p><button class="btn btn-gray" onclick="mostrar('ingresos')">Ver todos los sueldos →</button></div>
+    <div class="card"><h2>🧾 Gastos de ${mesNombreLargo(hoy.getFullYear(),hoy.getMonth())} - SIN cierre, solo por mes</h2><p class="mutual">Los gastos no tienen cierre ni vencimiento de tarjeta. Solo fecha del gasto.</p>${gastosDelMes(hoy.getFullYear(),hoy.getMonth()).map(g=>`<div class="item"><div><b>${g.descripcion}</b><br><span class="mutual">${g.categoria||'Gastos generales'} • 📅 ${g.fecha?new Date(g.fecha+'T00:00:00').toLocaleDateString('es-AR'):'sin fecha'}</span></div><div><b style="color:#ea580c">${formato(g.monto)}</b></div></div>`).join('')||'<p class="mutual">Sin gastos este mes.</p>'}<p class="mutual"><b>Total gastos ${mesNombre(hoy.getFullYear(),hoy.getMonth())}: ${formato(totGasMes)}</b> • Total todos los meses: ${formato(totGas)}</p><button class="btn btn-gray" onclick="mostrar('gastos')">Ver todos los gastos por mes →</button></div>
+    <div class="card"><h2>🔌 Servicios - consumos individuales</h2>${Object.entries(serviciosAgrupados()).map(([nombre,lista])=>{let total=lista.reduce((a,g)=>a+(parseFloat(g.monto)||0),0);return `<div class="mesBox"><div style="display:flex;justify-content:space-between"><b>${nombre}</b><b>${formato(total)}</b></div>${lista.map(g=>`<div class="cuotaRow"><span>${g.fecha?new Date(g.fecha+'T00:00:00').toLocaleDateString('es-AR'):'Sin fecha'}</span><b>${formato(g.monto)}</b></div>`).join('')}</div>`}).join('')||'<p class="mutual">Sin servicios.</p>'}</div>
+    <div class="card"><h2>🧾 Lo que llevás consumido en TARJETA - Se paga el ${datos.vencimiento}</h2>${datos.consumos.filter(c=>cuotaDelMes(c,clave)>0).map(c=>{let num=numeroCuotaEnMes(c,hoy.getFullYear(),hoy.getMonth());return `<div class="item"><div><b>${c.descripcion}</b><br><span class="mutual">📅 Comprado ${fechaCompraDe(c)} • Cuota ${num} de ${c.cuotas}</span><br>${badgeCuotas(c,hoy.getFullYear(),hoy.getMonth())}</div><div style="text-align:right"><b>${formato(c.montoTotal/c.cuotas)}</b></div></div>`}).join('')||'<p class="mutual">Sin consumos.</p>'}<button class="btn btn-gray" onclick="mostrar(\'calendario\')">Ver calendario →</button></div>
+    ${datos.tarjetas.map(t=>`<div class="card"><div style="display:flex;justify-content:space-between"><div><b>${t.nombre}</b></div><b>${formato(totalMes(clave,t.nombre))}</b></div><button class="btn btn-gray" onclick="verTarjeta('${t.nombre}')">Ver detalle →</button></div>`).join('')}
+    <div class="card"><h2>📅 Todos mis cierres de TARJETA</h2><p class="mutual">Solo tarjetas. Los gastos no tienen cierre.</p>${datos.cierres.map((c,i)=>`<div class="item"><div><b>Cierre ${c.cierre}</b> • Vence ${c.vencimiento}</div><span class="x" onclick="borrarCierre(${i})">✕</span></div>`).join('')}</div>`;
+  }
+  if(vista==='ingresos'){
+    let porMes={};datos.ingresos.forEach((ing,i)=>{let k=ing.fecha?mesClaveDeFecha(ing.fecha):'fijo';if(!porMes[k]) porMes[k]=[];porMes[k].push({...ing,idx:i});});
+    let mesesOrdenados=Object.keys(porMes).sort().reverse();
+    el.innerHTML=`<div class="card"><h2>💰 Cargar sueldo con fecha</h2><div class="alerta-verde">Cada sueldo queda guardado con su fecha y su mes. No se pisa el anterior.</div><label>¿Qué cobraste?</label><input id="ing-desc" placeholder="Ej: Sueldo Noviembre"><label>Monto</label><input id="ing-monto" type="number" placeholder="800000"><label>Fecha que lo cobraste</label><input id="ing-fecha" type="date"><label>Tipo</label><select id="ing-tipo"><option>Mensual</option><option>Sueldo</option><option>Aguinaldo</option><option>Quincenal</option><option>Extra / Único</option></select><button class="btn btn-green" onclick="agregarIngreso()">💰 Guardar sueldo con esa fecha</button></div><div class="card"><h2>💰 Sueldos mes a mes</h2>${mesesOrdenados.map(k=>{let lista=porMes[k];let total=lista.reduce((a,x)=>a+(parseFloat(x.monto)||0),0);let titulo=k==='fijo'?'Fijo mensual (sin fecha)':mesNombreLargo(parseInt(k.split('-')[0]),parseInt(k.split('-')[1])-1);return `<div class="mesBox"><div style="display:flex;justify-content:space-between"><b>${titulo}</b><b style="color:#16a34a">${formato(total)}</b></div>${lista.map(x=>`<div class="item"><div><b>${x.descripcion}</b><br><span class="mutual">📅 ${x.fecha?new Date(x.fecha+'T00:00:00').toLocaleDateString('es-AR'):'Sin fecha'} • ${x.tipo||''}</span></div><div><b style="color:#16a34a">${formato(x.monto)}</b> <span class="x" onclick="borrarIngreso(${x.idx})">✕</span></div></div>`).join('')}</div>`}).join('')||'<p class="mutual">Sin sueldos.</p>'}</div>`;
+  }
+  if(vista==='gastos'){
+    let cats=['Gastos generales','Servicios','Alquiler','Internet / Celular','Transporte','Comida','Salud','Educación','Otros'];
+    // Agrupar gastos por mes, SIN cierre
+    let porMesG={};datos.gastos.forEach((g,i)=>{let k=g.fecha?mesClaveDeFecha(g.fecha):mesClave(new Date());if(!porMesG[k]) porMesG[k]=[];porMesG[k].push({...g,idx:i});});
+    let mesesG=Object.keys(porMesG).sort().reverse();
+    el.innerHTML=`<div class="card"><h2>🧾 Gastos generales + Servicios - SIN cierre</h2><div class="alerta-verde"><b>🧾 TOTAL GASTOS GENERALES: ${formato(totalGastosPorCat('Gastos generales'))}</b><br><b>🔌 TOTAL SERVICIOS: ${formato(totalGastosPorCat('Servicios'))}</b><br><b>💰 TOTAL TODOS: ${formato(totalGastosMes())}</b><br><span class="mutual">Los gastos NO tienen cierre ni vencimiento de tarjeta. Solo tienen fecha del gasto y se agrupan por mes.</span></div><label>Gasto nuevo de noviembre (o el mes que sea)</label><input id="gas-desc" placeholder="Ej: Supermercado, Nafta, Farmacia, Luz"><label>¿Dónde lo sumo?</label><select id="gas-cat">${cats.map(c=>`<option ${c==='Gastos generales'?'selected':''}>${c}</option>`).join('')}</select><label>Monto de este gasto</label><input id="gas-monto" type="number" placeholder="45000"><label>Fecha del gasto - ej: noviembre</label><input id="gas-fecha" type="date"><label>Día que vence ese servicio (solo si es servicio, opcional)</label><input id="gas-venc" type="number" placeholder="10"><button class="btn btn-orange" onclick="agregarGasto()">🧾 Guardar gasto de ese mes</button><p class="mutual">Ej: si ponés fecha 15/11/2026, queda en Gastos de Noviembre 2026. No te pide cierre.</p></div>
+    <div class="card"><h2>🧾 Gastos por mes - sin cierre</h2>${mesesG.map(k=>{let lista=porMesG[k];let total=lista.reduce((a,x)=>a+(parseFloat(x.monto)||0),0);let titulo=mesNombreLargo(parseInt(k.split('-')[0]),parseInt(k.split('-')[1])-1);return `<div class="mesBox"><div style="display:flex;justify-content:space-between"><b>📅 ${titulo}</b><b style="color:#ea580c">${formato(total)}</b></div>${lista.map(x=>`<div class="item"><div><b>${x.descripcion}</b><br><span class="mutual">${x.categoria||'Gastos generales'} • 📅 ${x.fecha?new Date(x.fecha+'T00:00:00').toLocaleDateString('es-AR'):'sin fecha'}</span></div><div><b style="color:#ea580c">${formato(x.monto)}</b> <span class="x" onclick="borrarGasto(${x.idx})">✕</span></div></div>`).join('')}</div>`}).join('')||'<p class="mutual">Sin gastos todavía.</p>'}</div>
+    <div class="card"><h2>🔌 Servicios - consumos individuales por servicio</h2>${Object.entries(serviciosAgrupados()).map(([nombre,lista])=>{let total=lista.reduce((a,g)=>a+(parseFloat(g.monto)||0),0);return `<div class="mesBox"><div style="display:flex;justify-content:space-between"><b>${nombre}</b><b>${formato(total)}</b></div>${lista.map(g=>{let idx=datos.gastos.indexOf(g);return `<div class="item"><div><b>Consumo ${g.fecha?new Date(g.fecha+'T00:00:00').toLocaleDateString('es-AR'):'sin fecha'}</b><br><span class="mutual">Vence día ${g.vencimiento||'-'}</span></div><div><b style="color:#ea580c">${formato(g.monto)}</b> <span class="x" onclick="borrarGasto(${idx})">✕</span></div></div>`}).join('')}</div>`}).join('')||'<p class="mutual">Sin servicios.</p>'}</div>
+    <div class="card"><h2>🧾 Gastos generales (${formato(totalGastosPorCat('Gastos generales'))})</h2>${datos.gastos.filter(g=>(g.categoria||'Gastos generales')==='Gastos generales').map(g=>{let idx=datos.gastos.indexOf(g);return `<div class="item"><div><b>${g.descripcion}</b><br><span class="mutual">Fecha ${g.fecha?new Date(g.fecha+'T00:00:00').toLocaleDateString('es-AR'):'sin fecha'}</span></div><div><b style="color:#ea580c">${formato(g.monto)}</b> <span class="x" onclick="borrarGasto(${idx})">✕</span></div></div>`).join('')||'<p class="mutual">Sin gastos generales.</p>'}</div>`;
+  }
+  if(vista==='tarjetas'){
+    el.innerHTML=`<div class="card"><h2>💳 Mis Tarjetas - visibles</h2><p class="mutual">Actual tarjeta: vence <b>${datos.vencimiento}</b> • Próximo: cierra <b>${datos.proxCierre}</b> vence <b>${datos.proxVencimiento}</b></p>${datos.tarjetas.map(t=>`<div class="item"><div><b>${t.nombre}</b><br><span class="mutual">${t.banco||''} •••• ${t.ultimos||''}</span></div><div><button class="btn btn-gray" style="width:auto;padding:8px 12px;margin:0" onclick="verTarjeta('${t.nombre}')">Ver</button> <span class="x" onclick="borrarTarjeta('${t.nombre}')">✕</span></div></div>`).join('')||'Sin tarjetas'}<button class="btn btn-blue" onclick="mostrar('agregarTarjeta')">➕ Agregar Tarjeta visible</button></div><div class="card"><h2>🔒 Otras tarjetas - Ocultas</h2><p class="mutual">No aparecen en Inicio ni en Calendario. Para entrar: tocá 3 veces el título <b>SlyApp</b> arriba y poné el código. Código inicial: <b>1234</b>. Cambialo adentro.</p><button class="btn btn-dark" onclick="pedirCodigo()">🔒 Entrar a otras tarjetas con código</button></div>`;
+  }
+  if(vista==='agregarTarjeta'){
+    el.innerHTML=`<div class="card"><h2>➕ Nueva Tarjeta visible</h2><label>Nombre</label><input id="nt-nombre" placeholder="Visa Santander"><label>Banco</label><input id="nt-banco" placeholder="Santander"><label>Últimos 4</label><input id="nt-ultimos" placeholder="2688"><button class="btn btn-green" onclick="crearTarjeta()">Guardar</button><button class="btn btn-gray" onclick="mostrar('tarjetas')">Volver</button></div><div class="card"><h2>🔒 ¿Querés que sea oculta?</h2><p class="mutual">Si es una tarjeta que no querés que se vea, no la agregues acá. Entrá a la pestaña oculta con código.</p><button class="btn btn-dark" onclick="pedirCodigo()">🔒 Ir a tarjetas ocultas</button></div>`;
+  }
+  if(vista==='agregar'){
+    el.innerHTML=`<div class="card"><h2>➕ Cargar Consumo Manual - Tarjeta visible</h2><p class="mutual">Si es de una tarjeta oculta, no lo cargues acá. Entrá a la pestaña oculta.</p><label>Tarjeta</label><select id="c-tarjeta">${datos.tarjetas.map(t=>`<option value="${t.nombre}">${t.nombre}</option>`).join('')||'<option value="">Creá primero una tarjeta</option>'}</select><label>¿Qué compraste?</label><input id="c-desc" placeholder="Ej: Farmacity"><label>Monto total</label><input id="c-monto" type="number" placeholder="60000"><label>Cuotas</label><input id="c-cuotas" type="number" value="1"><label>Fecha de compra</label><input id="c-fecha" type="date"><label>Categoría</label><select id="c-cat"><option>Otros</option><option>Supermercado</option><option>Farmacia</option><option>Ropa</option><option>Combustible</option><option>Servicios</option><option>Salud</option><option>Ocio</option></select><button class="btn btn-green" onclick="agregarConsumo()">Guardar y sumar</button></div><div class="card"><h3>¿Es un gasto general, no una cuota de tarjeta?</h3><p class="mutual">Los gastos no tienen cierre. Van por fecha.</p><button class="btn btn-orange" onclick="mostrar('gastos')">🧾 Cargarlo en Gastos →</button></div>`;
+  }
+  if(vista==='resumen'){
+    el.innerHTML=`<div class="card"><h2>📄 Pegar Resumen TARJETA</h2><div class="alerta"><b>OJO:</b> el cierre y vencimiento son SOLO para tarjetas. Los gastos no tienen cierre.</div><div class="alerta-verde"><b>ESTA TARJETA: cerrado ${datos.cierre} • VENCE ${datos.vencimiento}</b></div><div class="alerta-azul" style="margin-top:8px"><b>PRÓXIMO: cierra ${datos.proxCierre} • VENCE ${datos.proxVencimiento}</b></div><label>Cierre actual tarjeta</label><input id="res-cierre" value="${datos.cierre}"><label>Vencimiento actual tarjeta</label><input id="res-venc" value="${datos.vencimiento}"><label>Próximo cierre tarjeta</label><input id="res-proxCierre" value="${datos.proxCierre}"><label>Próximo vencimiento tarjeta</label><input id="res-proxVenc" value="${datos.proxVencimiento}"><button class="btn btn-green" onclick="guardarCierre()">✅ Guardar los 4 datos de tarjeta</button><div class="card" style="margin-top:12px;box-shadow:none;border:1px solid #e2e8f0"><h3>📅 Mis cierres de TARJETA mes a mes</h3>${datos.cierres.map((c,i)=>`<div class="item"><div><b>Cierre ${c.cierre}</b> • Vence ${c.vencimiento}</div><span class="x" onclick="borrarCierre(${i})">✕</span></div>`).join('')}<label>Nuevo cierre tarjeta</label><input id="nuevo-cierre" placeholder="23/01/2027"><label>Nuevo vencimiento tarjeta</label><input id="nuevo-venc" placeholder="04/02/2027"><button class="btn btn-blue" onclick="agregarCierre()">➕ Agregar este cierre</button></div><label>¿De qué tarjeta es?</label><select id="resumen-tarjeta">${datos.tarjetas.map(t=>`<option value="${t.nombre}">${t.nombre}</option>`).join('')||'<option value="">Creá primero una tarjeta</option>'}</select><label>Pegá acá el texto del resumen de tarjeta</label><textarea id="resumen-texto" placeholder="Pegá acá todo el texto..."></textarea><button class="btn btn-blue" onclick="analizarResumen()">🔍 Analizar resumen</button><button class="btn btn-gray" onclick="probarEjemplo()">🧪 Probar con tu formato</button><div id="previewResumen"></div><div id="debugResumen"></div><button class="btn btn-gray" onclick="document.getElementById('resumen-texto').value='';document.getElementById('previewResumen').innerHTML='';document.getElementById('debugResumen').innerHTML=''">Limpiar</button><button class="btn btn-red" onclick="borrarTodosConsumos()">🗑 Borrar SOLO consumos de tarjeta visible</button><p class="mutual">NO borra ingresos, gastos ni tarjetas ocultas.</p></div>`;
+  }
+  if(vista==='calendario'){
+    el.innerHTML=`<div class="card"><h2>📅 Calendario - Tarjetas + Sueldo + Gastos por mes</h2><p class="mutual">🔴 Última cuota • 🟠 Quedan 2-4 • El cierre es solo de tarjetas. Los gastos van por fecha del mes.</p>${[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>{let d=new Date(hoy.getFullYear(),hoy.getMonth()+i,1);let k=mesClave(d);let cons=datos.consumos.filter(c=>cuotaDelMes(c,k)>0);let totTarj=totalMes(k);let gMes=gastosDelMes(d.getFullYear(),d.getMonth());let totGasMes=totalGastosDelMes(d.getFullYear(),d.getMonth());let totSueldo=totalIngresosMes(k);let totalTodo=totTarj+totGasMes;let cierre=cierreDeMes(d.getFullYear(),d.getMonth());let vto=vencimientoDeMes(d.getFullYear(),d.getMonth());let terminan=cons.filter(c=>quedanEnMes(c,d.getFullYear(),d.getMonth())===1).length;return `<div class="mesBox"><div style="display:flex;justify-content:space-between"><b>${mesNombre(d.getFullYear(),d.getMonth())}</b><b>${formato(totalTodo)}</b></div><p class="mutual"><b>Tarjeta: Cierra ${cierre} • Vence ${vto}</b></p><p class="mutual">💰 Sueldo: <b style="color:#16a34a">${formato(totSueldo)}</b> • Tarjetas ${formato(totTarj)} + Gastos del mes ${formato(totGasMes)} = <b>${formato(totalTodo)}</b> • Te quedan <b>${formato(totSueldo-totalTodo)}</b></p><div class="resumenCuotas"><span style="background:#e0e7ff">📦 ${cons.length} cuotas</span>${terminan?`<span style="background:#fee2e2;color:#991b1b">🔥 ${terminan} TERMINAN</span>`:''}</div>${cons.map(c=>{let num=numeroCuotaEnMes(c,d.getFullYear(),d.getMonth());let quedan=quedanEnMes(c,d.getFullYear(),d.getMonth());let clase=quedan===1?'ultima':quedan<=4?'destacada':'';return `<div class="cuotaRow ${clase}"><span><b>${c.descripcion}</b><br><span class="mutual">📅 Comprado ${fechaCompraDe(c)} • Cuota ${num} de ${c.cuotas} • Vence ${vto}</span><br>${badgeCuotas(c,d.getFullYear(),d.getMonth())}</span><b>${formato(c.montoTotal/c.cuotas)}</b></div>`}).join('')}${gMes.map(g=>`<div class="cuotaRow"><span><b>🧾 ${g.descripcion} - ${g.categoria||''}</b><br><span class="mutual">Gasto del mes • Fecha ${g.fecha?new Date(g.fecha+'T00:00:00').toLocaleDateString('es-AR'):''} - SIN cierre</span></span><b style="color:#ea580c">${formato(g.monto)}</b></div>`).join('')}${ingresosDelMes(k).map(ing=>`<div class="cuotaRow" style="background:#ecfdf5"><span><b>💰 ${ing.descripcion}</b><br><span class="mutual">Sueldo • ${ing.fecha?new Date(ing.fecha+'T00:00:00').toLocaleDateString('es-AR'):''}</span></span><b style="color:#16a34a">${formato(ing.monto)}</b></div>`).join('')}${cons.length===0&&gMes.length===0?'<p class="mutual">Sin cuotas ni gastos.</p>':''}</div>`}).join('')}</div>`;
+  }
+  if(vista.startsWith('detalle_')){
+    let nombre=vista.replace('detalle_','');let cons=datos.consumos.filter(c=>c.tarjeta===nombre);
+    el.innerHTML=`<div class="card"><h2>${nombre}</h2><p class="mutual">${cons.length} consumos • Se paga el ${datos.vencimiento}: ${formato(totalMes(clave,nombre))}</p><button class="btn btn-gray" onclick="mostrar('tarjetas')">← Volver</button></div>${cons.map(c=>{
+      let globalIdx=datos.consumos.indexOf(c);let inicio=new Date(c.fechaInicio+'T00:00:00');
+      let cuotaHoy=numeroCuotaEnMes(c,hoy.getFullYear(),hoy.getMonth());
+      return `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:16px">${c.descripcion}</b><br><span class="mutual">📅 Comprado: ${fechaCompraDe(c)} • Total ${formato(c.montoTotal)}</span><br>${badgeCuotas(c,hoy.getFullYear(),hoy.getMonth())}</div><span class="x" onclick="borrarConsumo(${globalIdx})">✕</span></div><div style="margin-top:12px"><b style="font-size:14px">Detalle de cada cuota:</b>${Array.from({length:c.cuotas},(_,i)=>{let d=new Date(inicio.getFullYear(),inicio.getMonth()+i,1);let num=i+1;let estado=num<cuotaHoy?'✅ Pagada':num===cuotaHoy?'🟡 Este mes - vence '+datos.vencimiento:'⏳ Pendiente - vence '+vencimientoDeMes(d.getFullYear(),d.getMonth());return `<div class="cuotaRow"><span><b>${c.descripcion}</b><br><span class="mutual">${mesNombre(d.getFullYear(),d.getMonth())} • Cuota ${num} de ${c.cuotas} • ${estado}</span></span><b>${formato(c.montoTotal/c.cuotas)}</b></div>`}).join('')}</div></div>`;
+    }).join('')||'<div class="card">Sin consumos.</div>'}`;
+  }
+}
+function verTarjeta(n){vista='detalle_'+n;render();window.scrollTo(0,0);}
+function guardarCierre(){datos.cierre=document.getElementById('res-cierre').value;datos.vencimiento=document.getElementById('res-venc').value;datos.proxCierre=document.getElementById('res-proxCierre').value;datos.proxVencimiento=document.getElementById('res-proxVenc').value;guardar();alert('✅ Guardado - solo tarjetas.');render();}
+function agregarCierre(){let c=document.getElementById('nuevo-cierre').value.trim();let v=document.getElementById('nuevo-venc').value.trim();if(!c||!v) return alert('Poné cierre y vencimiento');if(datos.cierres.some(x=>x.cierre===c)) return alert('Ese cierre ya está');datos.cierres.push({cierre:c,vencimiento:v});datos.proxCierre=c;datos.proxVencimiento=v;guardar();alert('✅ Agregado: cierra '+c+' vence '+v);render();}
+function borrarCierre(i){if(!confirm('¿Borrar ese cierre?'))return;datos.cierres.splice(i,1);guardar();render();}
+function crearTarjeta(){let nombre=document.getElementById('nt-nombre').value.trim();if(!nombre) return alert('Poné nombre');if(datos.tarjetas.find(t=>t.nombre===nombre)) return alert('Ya existe');datos.tarjetas.push({nombre,banco:document.getElementById('nt-banco').value,ultimos:document.getElementById('nt-ultimos').value});guardar();mostrar('tarjetas');}
+function borrarTarjeta(n){if(!confirm('¿Borrar '+n+' y sus consumos?'))return;datos.tarjetas=datos.tarjetas.filter(t=>t.nombre!==n);datos.consumos=datos.consumos.filter(c=>c.tarjeta!==n);guardar();render();}
+// OCULTAS
+function cambiarPin(){let n=document.getElementById('nuevo-pin').value.trim();if(!n||n.length<4) return alert('Poné un código de al menos 4 números');datos.pin=n;guardar();alert('✅ Nuevo código guardado: '+n+'\nAhora entrá con ese código.');render();}
+function agregarTarjetaOculta(){let nombre=document.getElementById('oc-nombre').value.trim();if(!nombre) return alert('Poné nombre');if(datos.tarjetasOcultas.find(t=>t.nombre===nombre)) return alert('Ya existe');datos.tarjetasOcultas.push({nombre,banco:document.getElementById('oc-banco').value,ultimos:document.getElementById('oc-ultimos').value});guardar();render();}
+function borrarTarjetaOculta(i){if(!confirm('¿Borrar esta tarjeta oculta y sus consumos?'))return;let n=datos.tarjetasOcultas[i].nombre;datos.tarjetasOcultas.splice(i,1);datos.consumosOcultos=datos.consumosOcultos.filter(c=>c.tarjeta!==n);guardar();render();}
+function agregarConsumoOculto(ti){let t=datos.tarjetasOcultas[ti];let desc=document.getElementById('oc-desc-'+ti).value.trim();let monto=parseFloat(document.getElementById('oc-monto-'+ti).value);let cuotas=parseInt(document.getElementById('oc-cuotas-'+ti).value)||1;let fecha=document.getElementById('oc-fecha-'+ti).value||new Date().toISOString().slice(0,10);if(!desc||!monto) return alert('Completá descripción y monto');datos.consumosOcultos.push({descripcion:desc,montoTotal:monto,tarjeta:t.nombre,cuotas,fechaInicio:fecha,cuotaActual:1,valorCuota:monto/cuotas});guardar();alert('✅ Guardado en tarjeta oculta '+t.nombre);render();}
+function borrarConsumoOculto(i){datos.consumosOcultos.splice(i,1);guardar();render();}
+function agregarIngreso(){let desc=document.getElementById('ing-desc').value.trim();let monto=parseFloat(document.getElementById('ing-monto').value);if(!desc||!monto) return alert('Completá qué es y monto');let fecha=document.getElementById('ing-fecha').value;datos.ingresos.push({descripcion:desc,monto,tipo:document.getElementById('ing-tipo').value,fecha:fecha});guardar();alert('✅ Sueldo guardado');render();}
+function borrarIngreso(i){datos.ingresos.splice(i,1);guardar();render();}
+function agregarGasto(){let desc=document.getElementById('gas-desc').value.trim();let monto=parseFloat(document.getElementById('gas-monto').value);if(!desc||!monto) return alert('Completá gasto y monto');let fecha=document.getElementById('gas-fecha').value;let cat=document.getElementById('gas-cat').value;datos.gastos.push({descripcion:desc,monto,categoria:cat,vencimiento:document.getElementById('gas-venc').value,fecha:fecha});guardar();alert('✅ Gasto guardado en '+(fecha?new Date(fecha+'T00:00:00').toLocaleDateString('es-AR'):'este mes')+' - SIN cierre, solo por mes.');render();}
+function borrarGasto(i){datos.gastos.splice(i,1);guardar();render();}
+function agregarConsumo(){let tarjeta=document.getElementById('c-tarjeta').value;let desc=document.getElementById('c-desc').value.trim();let monto=parseFloat(document.getElementById('c-monto').value);let cuotas=parseInt(document.getElementById('c-cuotas').value)||1;let fecha=document.getElementById('c-fecha').value||new Date().toISOString().slice(0,10);if(!tarjeta||!desc||!monto) return alert('Completá tarjeta, descripción y monto');datos.consumos.push({descripcion:desc,montoTotal:monto,tarjeta,categoria:document.getElementById('c-cat').value,cuotas,fechaInicio:fecha,cuotaActual:1,valorCuota:monto/cuotas,fechaCompraReal:fecha});guardar();alert('✅ Guardado!');mostrar('inicio');}
+function borrarConsumo(i){if(!confirm('¿Borrar este consumo?'))return;datos.consumos.splice(i,1);guardar();render();}
+function probarEjemplo(){document.getElementById('resumen-texto').value='24/03/26 Merpago*blanqeriahome 8 de 9 551884 9.251,73 pesos\n17/04/26 Reverpass-flores 8 de 9 003467 10.555,55 pesos\n26/10/26 Casa del audio 1 de 6 006090 19.166,70 pesos\nCasa del audio 006090 menos 19.166,70 pesos\n18/11/26 Farmacity3 1 de 6 004333 2.148,50 pesos';analizarResumen();}
+function analizarResumen(){
+  const texto=document.getElementById('resumen-texto').value.trim();const tarjeta=document.getElementById('resumen-tarjeta').value;const preview=document.getElementById('previewResumen');const debug=document.getElementById('debugResumen');
+  if(!texto) return alert('Pegá primero el resumen');if(!tarjeta) return alert('Elegí la tarjeta');
+  resumenDetectado=[];
+  const lineas=texto.replace(/\r/g,'\n').split('\n').map(l=>l.trim()).filter(l=>l!=='');
+  let ultimaFecha=null;let ultimaFechaTxt='';let log=[];let devoluciones=[];
+  const ignorar=['copia fiel','subtotal','movimientos de','visa crédito terminada','fecha descripción','monto en dólares','otros conceptos','db iva'];
+  for(let linea of lineas){
+    let lb=linea.toLowerCase();
+    if(ignorar.some(x=>lb.includes(x))) continue;
+    let mDev=linea.match(/^(.+?)\s+(\d+)\s+menos\s+([\d\.]+,\d{2})\s*pesos\s*$/i);
+    if(mDev){devoluciones.push({desc:mDev[1].trim().toLowerCase()});continue;}
+    let m=linea.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(.+?)\s+(\d{1,2})\s+de\s+(\d{1,2})\s+(\d+)\s+([\d\.]+,\d{2})\s*pesos\s*$/i);
+    if(m){
+      let dia=parseInt(m[1]),mes=parseInt(m[2])-1,anio=parseInt(m[3]);if(anio<100) anio+=2000;
+      let desc=m[4].trim();let cuotaActual=parseInt(m[5]);let cuotas=parseInt(m[6]);let monto=parseFloat(m[8].replace(/\./g,'').replace(',','.'));
+      let fechaCompra=new Date(anio,mes,dia);ultimaFecha=fechaCompra;ultimaFechaTxt=dia+'/'+(mes+1)+'/'+anio;
+      let inicioCorregido=new Date(2026,10-(cuotaActual-1),dia);
+      resumenDetectado.push({descripcion:desc.slice(0,40),montoTotal:monto*cuotas,tarjeta,categoria:'Otros',cuotas,fechaInicio:inicioCorregido.toISOString().slice(0,10),cuotaActual,valorCuota:monto,fechaTexto:ultimaFechaTxt,fechaCompraReal:ultimaFechaTxt,corregidoV27:true});continue;
+    }
+    let m2=linea.match(/^(.+?)\s+(\d{1,2})\s+de\s+(\d{1,2})\s+(\d+)\s+([\d\.]+,\d{2})\s*pesos\s*$/i);
+    if(m2 && ultimaFecha){
+      let desc=m2[1].trim();let cuotaActual=parseInt(m2[2]);let cuotas=parseInt(m2[3]);let monto=parseFloat(m2[5].replace(/\./g,'').replace(',','.'));
+      let inicioCorregido=new Date(2026,10-(cuotaActual-1),ultimaFecha.getDate());
+      resumenDetectado.push({descripcion:desc.slice(0,40),montoTotal:monto*cuotas,tarjeta,categoria:'Otros',cuotas,fechaInicio:inicioCorregido.toISOString().slice(0,10),cuotaActual,valorCuota:monto,fechaTexto:ultimaFechaTxt,fechaCompraReal:ultimaFechaTxt,corregidoV27:true});continue;
+    }
+    let m3=linea.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(.+?)\s+(\d+)\s+([\d\.]+,\d{2})\s*pesos\s*$/i);
+    if(m3){
+      let dia=parseInt(m3[1]),mes=parseInt(m3[2])-1,anio=parseInt(m3[3]);if(anio<100) anio+=2000;
+      let desc=m3[4].trim();let monto=parseFloat(m3[6].replace(/\./g,'').replace(',','.'));
+      let fechaInicio=new Date(anio,mes,dia);ultimaFecha=fechaInicio;ultimaFechaTxt=dia+'/'+(mes+1)+'/'+anio;
+      resumenDetectado.push({descripcion:desc.slice(0,40),montoTotal:monto,tarjeta,categoria:'Otros',cuotas:1,fechaInicio:fechaInicio.toISOString().slice(0,10),cuotaActual:1,valorCuota:monto,fechaTexto:ultimaFechaTxt,fechaCompraReal:ultimaFechaTxt,corregidoV27:true});continue;
+    }
+    log.push('NO ENTENDI: '+linea);
+  }
+  if(devoluciones.length){resumenDetectado=resumenDetectado.filter(r=>!devoluciones.some(d=>r.descripcion.toLowerCase().includes(d.desc)));}
+  if(!resumenDetectado.length){preview.innerHTML=`<p style="color:red">❌ No detecté nada.</p>`;debug.innerHTML=`<div class="debug">${log.join('\n')}</div>`;return;}
+  debug.innerHTML=`<div class="debug">✅ Detecté ${resumenDetectado.length} consumos.</div>`;
+  mostrarPreview();
+}
+function quitarDeResumen(i){resumenDetectado.splice(i,1);if(!resumenDetectado.length){document.getElementById('previewResumen').innerHTML='';return;}mostrarPreview();}
+function importarResumen(){
+  if(!resumenDetectado.length) return alert('No hay nada');
+  let nuevos=0,ya=0;
+  resumenDetectado.forEach(r=>{
+    let idx=datos.consumos.findIndex(c=>c.tarjeta===r.tarjeta && c.descripcion===r.descripcion && Math.abs(c.valorCuota-r.valorCuota)<1 && c.cuotas===r.cuotas);
+    if(idx>=0){datos.consumos[idx]=r;ya++;} else {datos.consumos.push(r);nuevos++;}
+  });
+  datos.consumos=datos.consumos.filter(c=>!(c.descripcion.toLowerCase().includes('casa del audio')&&Math.abs(c.valorCuota-19166.70)<1));
+  guardar();alert('✅ Nuevos: '+nuevos+' • Corregidos: '+ya);resumenDetectado=[];mostrar('inicio');
+}
+mostrar('inicio');
+</script>
+</body>
+</html>
