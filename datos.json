@@ -1,22 +1,23 @@
 {
+  "version": 2,
   "gastos": [
     {
       "id": 1,
       "descripcion": "Supermercado",
       "montoTotal": 85000,
       "tarjeta": "Visa",
+      "categoria": "Comida",
       "cuotas": 1,
-      "fechaInicio": "2026-11-26",
-      "pagado": true
+      "fechaInicio": "2026-11-26"
     },
     {
       "id": 2,
       "descripcion": "Zapatillas",
       "montoTotal": 120000,
       "tarjeta": "Mastercard",
+      "categoria": "Ropa",
       "cuotas": 6,
-      "fechaInicio": "2026-11-10",
-      "pagado": false
+      "fechaInicio": "2026-11-10"
     }
   ]
 }
