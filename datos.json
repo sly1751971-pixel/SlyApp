@@ -1,0 +1,22 @@
+{
+  "gastos": [
+    {
+      "id": 1,
+      "descripcion": "Supermercado",
+      "montoTotal": 85000,
+      "tarjeta": "Visa",
+      "cuotas": 1,
+      "fechaInicio": "2026-11-26",
+      "pagado": true
+    },
+    {
+      "id": 2,
+      "descripcion": "Zapatillas",
+      "montoTotal": 120000,
+      "tarjeta": "Mastercard",
+      "cuotas": 6,
+      "fechaInicio": "2026-11-10",
+      "pagado": false
+    }
+  ]
+}
