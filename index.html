@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Gastos</title>
+<meta name="theme-color" content="#111827">
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,sans-serif;margin:0;background:#f3f4f6;color:#111;font-size:16px}
+header{background:#111827;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+header h1{font-size:18px;margin:0}
+main{max-width:720px;margin:0 auto;padding:16px;padding-bottom:120px}
+.card{background:#fff;padding:18px;border-radius:16px;margin-bottom:16px}
+.card h2{margin-top:0;font-size:19px}
+label{font-weight:600;font-size:14px;display:block;margin-top:6px}
+input,select,textarea{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #d1d5db;font-size:16px;background:#fff}
+.btn{width:100%;padding:16px;border-radius:14px;border:none;font-size:17px;font-weight:700;cursor:pointer;margin:6px 0}
+.btn-primary{background:#111827;color:#fff}.btn-green{background:#047857;color:#fff}.btn-excel{background:#217346;color:#fff}.btn-outline{background:#fff;color:#111827;border:2px solid #111827}
+.item{padding:14px 0;border-bottom:1px solid #eee}.mes{background:#eef2ff;padding:12px;border-radius:10px;margin:6px 0;display:flex;justify-content:space-between}
+.sugerencia{background:#fffbeb;padding:12px;border-radius:10px;margin:8px 0;font-size:15px}
+.seccion{display:none}.seccion.activa{display:block}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #ddd;padding:6px;z-index:10}
+.bottom-nav button{flex:1;background:none;border:none;padding:10px 1px;font-size:10px;cursor:pointer;color:#666}
+.bottom-nav button.activo{color:#4f46e5;font-weight:bold}
+.tarjeta-card{border-radius:16px;padding:16px;margin-bottom:14px;color:#fff}
+.tarjeta-visa{background:linear-gradient(135deg,#1a1f71,#2a3bb5)}.tarjeta-amex{background:linear-gradient(135deg,#2e77bc,#5aa9e6)}
+.tarjeta-master{background:linear-gradient(135deg,#eb001b,#f79e1b)}.tarjeta-otra{background:linear-gradient(135deg,#111827,#4b5563)}
+.tarjeta-efectivo{background:#ecfdf5;color:#111;border:2px solid #047857}
+details summary{list-style:none;cursor:pointer}details summary::-webkit-details-marker{display:none}
+.chip{display:inline-block;padding:8px 14px;border-radius:99px;background:#eef2ff;margin:4px 4px 4px 0;font-size:14px;cursor:pointer}
+.chip.activo{background:#111827;color:#fff}
+.btn-blanco{background:#fff;color:#111827;border:none;padding:14px;border-radius:12px;width:100%;font-weight:700;font-size:16px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+<header><h1>💰 Mis Gastos</h1><button onclick="document.getElementById('menu').style.display=document.getElementById('menu').style.display==='block'?'none':'block'" style="background:#fff;border:none;font-size:22px;width:48px;height:48px;border-radius:12px;">☰</button></header>
+<div id="menu" style="display:none;background:#fff;padding:8px;">
+<button onclick="irA('inicio')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">🏠 Inicio</button>
+<button onclick="irA('cargar')" style="width:100%;padding:14px;text-align:left;border:none;background:#dcfce7;border-radius:12px;margin:4px 0;font-weight:700;">➕ Cargar consumo</button>
+<button onclick="irA('resumen')" style="width:100%;padding:14px;text-align:left;border:none;background:#eef2ff;border-radius:12px;margin:4px 0;font-weight:700;">📄 Cargar Resumen</button>
+<button onclick="irA('ingresos')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">💰 Ingresos</button>
+<button onclick="irA('tarjetas')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">💳 Mis Tarjetas</button>
+<button onclick="irA('agregarTarjeta')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">➕ Agregar Tarjeta</button>
+<button onclick="irA('servicios')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">🧾 Servicios</button>
+<button onclick="irA('calendario')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">📅 Calendario</button>
+<button onclick="irA('ia')" style="width:100%;padding:14px;text-align:left;border:none;background:#f9fafb;border-radius:12px;margin:4px 0;">🤖 IA</button>
+</div>
+<main>
+
+<section id="seccion-inicio" class="seccion activa">
+<div class="card"><h2>💰 Balance del mes</h2><div id="balanceInicio"></div><button class="btn btn-green" onclick="irA('cargar')">➕ Cargar consumo</button><button class="btn btn-primary" onclick="irA('resumen')">📄 Cargar Resumen</button><button class="btn btn-outline" onclick="irA('ingresos')">+ Agregar ingreso</button></div>
+<div class="card"><h2>💳 Resumen por tarjeta</h2><div id="resumenTarjetasInicio"></div><button class="btn btn-primary" onclick="irA('tarjetas')">Ver tarjetas por separado →</button></div>
+<div class="card"><h2>📊 Últimos consumos</h2><div id="lista"></div><button class="btn btn-excel" onclick="exportarExcel()">⬇ Exportar a Excel</button></div>
+</section>
+
+<section id="seccion-cargar" class="seccion">
+<div class="card" style="border:2px solid #047857;"><h2>➕ Cargar consumo en tarjeta</h2>
+<label>¿Con qué tarjeta?</label><select id="tarjeta"></select>
+<div id="infoTarjetaSeleccionada" style="background:#ecfdf5;padding:10px;border-radius:10px;font-size:14px;margin:6px 0;"></div>
+<label>¿Qué compraste?</label><input id="descripcion" placeholder="Ej: Supermercado, Ropa, Nafta">
+<label>Monto total</label><input id="monto" type="number" inputmode="numeric" placeholder="120000">
+<label>Categoría</label><select id="categoria"><option>Comida</option><option>Casa</option><option>Transporte</option><option>Ropa</option><option>Ocio</option><option>Salud</option><option>Mascotas</option><option>Otros</option></select>
+<label>Cuotas</label><input id="cuotas" type="number" value="1" min="1" max="24">
+<div id="previewCuota" style="background:#eef2ff;padding:10px;border-radius:10px;font-size:14px;"></div>
+<label>Fecha de compra</label><input id="fecha" type="date">
+<button class="btn btn-green" onclick="agregarGasto()">+ Guardar consumo en esta tarjeta ✅</button>
+<button class="btn btn-outline" onclick="irA('tarjetas')">Ver mis tarjetas →</button>
+</div>
+</section>
+
+<section id="seccion-resumen" class="seccion">
+<div class="card" style="border:2px solid #4f46e5;"><h2>📄 Cargar Resumen de Tarjeta</h2>
+<p style="font-size:14px;color:#666;">Copiá y pegá el resumen de tu banco. La app detecta los consumos y cuotas sola.</p>
+<label>¿De qué tarjeta es este resumen?</label><select id="resumen-tarjeta"></select>
+<div style="background:#eef2ff;padding:12px;border-radius:10px;font-size:14px;line-height:1.5;"><b>Ejemplo para copiar:</b><br>Supermercado 2/3 $30000<br>Ropa 1/6 $12000<br>Nafta 1/1 $25000</div>
+<label>Pegá acá el resumen</label>
+<textarea id="resumen-texto" rows="8" placeholder="Pegá acá el texto del resumen...&#10;Ej:&#10;Supermercado 2/3 $30000&#10;Ropa 1/6 $12000"></textarea>
+<button class="btn btn-primary" onclick="analizarResumen()">🔍 Analizar resumen</button>
+<div id="previewResumen"></div>
+</div>
+<div class="card"><h2>📝 Cargar solo el total del resumen</h2>
+<p style="font-size:14px;color:#666;">Si no querés pegar todo, cargá solo cuánto te vino.</p>
+<label>Tarjeta</label><select id="resumen-total-tarjeta"></select>
+<label>Total a pagar este mes</label><input id="resumen-total-monto" type="number" placeholder="250000">
+<label>¿En cuántas cuotas lo vas a pagar?</label><input id="resumen-total-cuotas" type="number" value="1" min="1" max="12">
+<label>¿Qué es?</label><input id="resumen-total-desc" placeholder="Ej: Resumen Visa Noviembre">
+<button class="btn btn-green" onclick="agregarResumenTotal()">+ Guardar total del resumen</button>
+</div>
+</section>
+
+<section id="seccion-ingresos" class="seccion">
+<div class="card"><h2>💰 Agregar ingreso</h2>
+<label>¿De qué es?</label><input id="ing-descripcion" placeholder="Ej: Sueldo, Jubilación">
+<label>Monto</label><input id="ing-monto" type="number" inputmode="numeric" placeholder="500000">
+<label>Tipo</label><select id="ing-tipo"><option>Sueldo</option><option>Jubilación / ANSES</option><option>Venta</option><option>Transferencia</option><option>Otro</option></select>
+<label>Fecha</label><input id="ing-fecha" type="date">
+<label style="display:flex;gap:10px;align-items:center;font-weight:400;"><input id="ing-fijo" type="checkbox" style="width:22px;height:22px;margin:0;"> Se repite todos los meses (fijo)</label>
+<button class="btn btn-green" onclick="agregarIngreso()">+ Agregar ingreso</button></div>
+<div class="card"><h2>Mis ingresos</h2><div id="listaIngresos"></div><div id="totalIngresos"></div></div>
+</section>
+
+<section id="seccion-agregarTarjeta" class="seccion">
+<div class="card"><h2>➕ Agregar nueva tarjeta</h2>
+<label>Nombre</label><input id="nueva-nombre" placeholder="Ej: Visa Galicia">
+<label>Banco</label><input id="nueva-banco" placeholder="Ej: Galicia, BBVA">
+<label>Tipo</label><select id="nueva-tipo"><option>Visa</option><option>American Express</option><option>Mastercard</option><option>Otra</option><option>Efectivo / Débito</option></select>
+<label>Últimos 4 dígitos</label><input id="nueva-digitos" placeholder="1234" maxlength="4" inputmode="numeric">
+<label>Límite (opcional)</label><input id="nueva-limite" type="number" placeholder="1000000">
+<label>Día cierre</label><input id="nueva-cierre" type="number" min="1" max="31" placeholder="20">
+<label>Día vencimiento</label><input id="nueva-vencimiento" type="number" min="1" max="31" placeholder="5">
+<button class="btn btn-primary" onclick="agregarTarjeta()">+ Guardar tarjeta</button></div>
+<div class="card"><h2>Mis tarjetas guardadas</h2><div id="listaTarjetasSimple"></div></div>
+</section>
+
+<section id="seccion-tarjetas" class="seccion">
+<div class="card"><h2>💳 Mis Tarjetas - Por banco</h2><p style="font-size:14px;color:#666;">Tocá "+ Cargar consumo" dentro de cada tarjeta.</p><div id="chipsTarjetas"></div><button class="btn btn-green" onclick="irA('cargar')">➕ Cargar consumo</button><button class="btn btn-primary" onclick="irA('resumen')">📄 Cargar Resumen</button><button class="btn btn-outline" onclick="irA('agregarTarjeta')">+ Agregar otra tarjeta</button><div id="listaTarjetas" style="margin-top:12px;"></div></div>
+</section>
+
+<section id="seccion-servicios" class="seccion">
+<div class="card"><h2>🧾 Servicios mensuales</h2>
+<label>Servicio</label><input id="serv-nombre" placeholder="Ej: Luz, Internet">
+<label>Monto por mes</label><input id="serv-monto" type="number" placeholder="15000">
+<label>Día vencimiento</label><input id="serv-dia" type="number" min="1" max="31" value="10">
+<label>Categoría</label><select id="serv-categoria"><option>Casa</option><option>Internet / Celular</option><option>Streaming</option><option>Transporte</option><option>Salud</option><option>Mascotas</option><option>Tarjeta</option><option>Préstamo</option><option>Yo</option><option>Otros</option></select>
+<button class="btn btn-primary" onclick="agregarServicio()">+ Agregar servicio</button></div>
+<div class="card"><h2>Mis servicios</h2><div id="listaServicios"></div><div id="totalServicios"></div></div>
+</section>
+
+<section id="seccion-calendario" class="seccion"><div class="card"><h2>📅 Calendario cuotas + servicios</h2><div id="calendario"></div></div></section>
+<section id="seccion-ia" class="seccion"><div class="card"><h2>🤖 Organizador IA (offline)</h2><div id="iaBox"></div><button class="btn btn-green" onclick="organizadorIA()">Volver a analizar</button></div></section>
+</main>
+
+<div class="bottom-nav">
+<button onclick="irA('inicio')" id="nav-inicio" class="activo">🏠<br>Inicio</button>
+<button onclick="irA('cargar')" id="nav-cargar" style="color:#047857;font-weight:700;">➕<br>Cargar</button>
+<button onclick="irA('resumen')" id="nav-resumen">📄<br>Resumen</button>
+<button onclick="irA('tarjetas')" id="nav-tarjetas">💳<br>Tarjetas</button>
+<button onclick="irA('ingresos')" id="nav-ingresos">💰<br>Ingresos</button>
+<button onclick="irA('servicios')" id="nav-servicios">🧾<br>Servicios</button>
+<button onclick="irA('calendario')" id="nav-calendario">📅<br>Cuotas</button>
+<button onclick="irA('ia')" id="nav-ia">🤖<br>IA</button>
+</div>
+
+<script>
+let gastos = JSON.parse(localStorage.getItem('misGastos_v2')) || [];
+let servicios = JSON.parse(localStorage.getItem('misServicios_v1')) || [
+  {id:101,nombre:"Alquiler",monto:0,dia:10,categoria:"Casa",activo:true},
+  {id:102,nombre:"Edesur (Luz)",monto:0,dia:15,categoria:"Casa",activo:true},
+  {id:103,nombre:"Metrogas (Gas)",monto:0,dia:15,categoria:"Casa",activo:true},
+  {id:104,nombre:"AySA (Agua)",monto:0,dia:20,categoria:"Casa",activo:true},
+  {id:105,nombre:"ABL",monto:0,dia:10,categoria:"Casa",activo:true},
+  {id:106,nombre:"Visa - Resumen",monto:0,dia:5,categoria:"Tarjeta",activo:true},
+  {id:107,nombre:"Amex - Resumen",monto:0,dia:5,categoria:"Tarjeta",activo:true},
+  {id:108,nombre:"Internet",monto:0,dia:10,categoria:"Internet / Celular",activo:true},
+  {id:109,nombre:"Comida gatos",monto:0,dia:1,categoria:"Mascotas",activo:true},
+  {id:110,nombre:"Piedritas",monto:0,dia:1,categoria:"Mascotas",activo:true},
+  {id:111,nombre:"Crédito ANSES",monto:0,dia:10,categoria:"Préstamo",activo:true},
+  {id:112,nombre:"Yo - Gastos personales",monto:0,dia:1,categoria:"Yo",activo:true}
+];
+let misTarjetas = JSON.parse(localStorage.getItem('misTarjetas_v1')) || [
+  {id:1,nombre:"Visa",banco:"",tipo:"Visa",digitos:"",limite:0,cierre:0,vencimiento:5,activa:true},
+  {id:2,nombre:"American Express",banco:"",tipo:"American Express",digitos:"",limite:0,cierre:0,vencimiento:5,activa:true},
+  {id:3,nombre:"Mastercard",banco:"",tipo:"Mastercard",digitos:"",limite:0,cierre:0,vencimiento:5,activa:true},
+  {id:4,nombre:"Efectivo / Débito",banco:"",tipo:"Efectivo / Débito",digitos:"",limite:0,cierre:0,vencimiento:0,activa:true}
+];
+let ingresos = JSON.parse(localStorage.getItem('misIngresos_v1')) || [
+  {id:201,descripcion:"Sueldo",monto:0,tipo:"Sueldo",fecha:"2026-11-26",fijo:true},
+  {id:202,descripcion:"Jubilación / ANSES",monto:0,tipo:"Jubilación / ANSES",fecha:"2026-11-26",fijo:true}
+];
+let filtroTarjeta='Todas';
+let resumenDetectado=[];
+function formato(n){return "$"+Number(n||0).toLocaleString('es-AR')}
+function guardar(){localStorage.setItem('misGastos_v2',JSON.stringify(gastos));mostrar();mostrarTarjetas();mostrarBalance()}
+function guardarServicios(){localStorage.setItem('misServicios_v1',JSON.stringify(servicios));mostrarServicios();organizadorIA();mostrar();mostrarTarjetas();mostrarBalance()}
+function guardarTarjetas(){localStorage.setItem('misTarjetas_v1',JSON.stringify(misTarjetas));actualizarSelectTarjetas();mostrarTarjetas();mostrarTarjetasSimple();actualizarInfoTarjeta();actualizarSelectResumen()}
+function guardarIngresos(){localStorage.setItem('misIngresos_v1',JSON.stringify(ingresos));mostrarIngresos();mostrarBalance();organizadorIA()}
+function irA(s){document.querySelectorAll('.seccion').forEach(x=>x.classList.remove('activa'));document.getElementById('seccion-'+s).classList.add('activa');document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('activo'));document.getElementById('nav-'+s)?.classList.add('activo');document.getElementById('menu').style.display='none';window.scrollTo(0,0)}
+function cargarEnTarjeta(nombre){actualizarSelectTarjetas();document.getElementById('tarjeta').value=nombre;actualizarInfoTarjeta();irA('cargar')}
+function actualizarInfoTarjeta(){const sel=document.getElementById('tarjeta');const div=document.getElementById('infoTarjetaSeleccionada');const prev=document.getElementById('previewCuota');if(!sel||!div)return;const t=misTarjetas.find(x=>x.nombre===sel.value);const por=resumenPorTarjeta();const r=por[sel.value];if(t){div.innerHTML=`💳 <b>${t.nombre}</b> ${t.banco?`- ${t.banco}`:''} ${t.digitos?`• ••• ${t.digitos}`:''}<br>Ya gastado: <b>${formato(r?r.totalGastado:0)}</b> • Te falta pagar: <b>${formato(r?r.faltaPagar:0)}</b> ${t.limite?`• Límite: ${formato(t.limite)}`:''}`}const m=parseFloat(document.getElementById('monto').value)||0;const c=parseInt(document.getElementById('cuotas').value)||1;if(prev){if(m>0)prev.innerHTML=`Vas a pagar <b>${c} cuota(s) de ${formato(m/c)}</b> en ${sel.value}`;else prev.innerHTML=`Elegí la tarjeta y poné el monto para ver la cuota.`}}
+function actualizarSelectResumen(){const s1=document.getElementById('resumen-tarjeta');const s2=document.getElementById('resumen-total-tarjeta');[s1,s2].forEach(s=>{if(!s)return;s.innerHTML='';misTarjetas.filter(t=>t.activa).forEach(t=>{const o=document.createElement('option');o.value=t.nombre;o.textContent=t.banco?`${t.nombre} - ${t.banco}`:t.nombre;s.appendChild(o)})})}
+function agregarIngreso(){const d=document.getElementById('ing-descripcion').value.trim();const m=parseFloat(document.getElementById('ing-monto').value);const t=document.getElementById('ing-tipo').value;const f=document.getElementById('ing-fecha').value||new Date().toISOString().slice(0,10);const fijo=document.getElementById('ing-fijo').checked;if(!d||!m) return alert('Completá qué es y el monto');ingresos.push({id:Date.now(),descripcion:d,monto:m,tipo:t,fecha:f,fijo});document.getElementById('ing-descripcion').value='';document.getElementById('ing-monto').value='';document.getElementById('ing-fijo').checked=false;guardarIngresos();alert('✅ Ingreso agregado')}
+function eliminarIngreso(id){if(!confirm('¿Eliminar este ingreso?'))return;ingresos=ingresos.filter(i=>i.id!==id);guardarIngresos()}
+function totalIngresosMes(){const hoy=new Date();return ingresos.reduce((a,i)=>{if(i.fijo)return a+i.monto;const[y,m]=i.fecha.split('-').map(Number);if(y===hoy.getFullYear()&&(m-1)===hoy.getMonth())return a+i.monto;return a},0)}
+function mostrarIngresos(){const l=document.getElementById('listaIngresos');const t=document.getElementById('totalIngresos');if(!l)return;l.innerHTML='';ingresos.forEach(i=>{const d=document.createElement('div');d.className='item';d.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;"><div><b>💰 ${i.descripcion}</b> ${i.fijo?'<span style="background:#dcfce7;padding:2px 8px;border-radius:99px;font-size:12px;">FIJO / MES</span>':''}<br><small style="color:#666">${i.tipo} • ${i.fecha}</small></div><div style="text-align:right;"><b style="color:#047857;">+${formato(i.monto)}</b><br><span style="color:red;cursor:pointer;font-size:14px;" onclick="eliminarIngreso(${i.id})">Eliminar</span></div></div>`;l.appendChild(d)});if(t)t.innerHTML=`<div style="background:#ecfdf5;padding:12px;border-radius:10px;display:flex;justify-content:space-between;"><span><b>Total ingresos este mes:</b></span><b style="color:#047857;">+${formato(totalIngresosMes())}</b></div>`}
+function mostrarBalance(){const d=document.getElementById('balanceInicio');if(!d)return;const ing=totalIngresosMes();const ts=servicios.filter(s=>s.activo).reduce((a,s)=>a+s.monto,0);let ce=0;gastos.forEach(g=>{const det=detalleCuotas(g);const c=det.lista.find(x=>x.estado==='este-mes');if(c)ce+=c.monto});const hoy=new Date();let co=0;gastos.forEach(g=>{if(g.cuotas===1){const[y,m]=g.fechaInicio.split('-').map(Number);if(y===hoy.getFullYear()&&(m-1)===hoy.getMonth())co+=g.montoTotal}});const tot=ce+co+ts;const q=ing-tot;d.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;"><div style="background:#ecfdf5;padding:12px;border-radius:12px;"><div style="font-size:12px;color:#666;">INGRESOS</div><b style="color:#047857;font-size:18px;">+${formato(ing)}</b></div><div style="background:#fef2f2;padding:12px;border-radius:12px;"><div style="font-size:12px;color:#666;">GASTOS MES</div><b style="color:#dc2626;font-size:18px;">-${formato(tot)}</b></div><div style="background:${q>=0?'#ecfdf5':'#fef2f2'};padding:12px;border-radius:12px;"><div style="font-size:12px;color:#666;">TE QUEDA</div><b style="color:${q>=0?'#047857':'#dc2626'};font-size:18px;">${formato(q)}</b></div></div><div style="font-size:13px;color:#666;margin-top:10px;">Cuotas este mes: ${formato(ce)} • Contado: ${formato(co)} • Servicios: ${formato(ts)}</div>`}
+function actualizarSelectTarjetas(){const s=document.getElementById('tarjeta');if(!s)return;const v=s.value;s.innerHTML='';misTarjetas.filter(t=>t.activa).forEach(t=>{const o=document.createElement('option');o.value=t.nombre;o.textContent=t.banco?`${t.nombre} - ${t.banco}`:t.nombre;s.appendChild(o)});if(v)s.value=v;actualizarInfoTarjeta()}
+function agregarTarjeta(){const n=document.getElementById('nueva-nombre').value.trim();const b=document.getElementById('nueva-banco').value.trim();const ti=document.getElementById('nueva-tipo').value;const di=document.getElementById('nueva-digitos').value.trim();const li=parseFloat(document.getElementById('nueva-limite').value)||0;const ci=parseInt(document.getElementById('nueva-cierre').value)||0;const ve=parseInt(document.getElementById('nueva-vencimiento').value)||0;if(!n)return alert('Poné el nombre de la tarjeta');misTarjetas.push({id:Date.now(),nombre:n,banco:b,tipo:ti,digitos:di,limite:li,cierre:ci,vencimiento:ve,activa:true});['nueva-nombre','nueva-banco','nueva-digitos','nueva-limite','nueva-cierre','nueva-vencimiento'].forEach(id=>document.getElementById(id).value='');guardarTarjetas();alert('✅ Tarjeta agregada: '+n);irA('tarjetas')}
+function eliminarTarjeta(id){const t=misTarjetas.find(x=>x.id===id);if(!t)return;if(!confirm(`¿Eliminar ${t.nombre}?`))return;misTarjetas=misTarjetas.filter(x=>x.id!==id);guardarTarjetas()}
+function mostrarTarjetasSimple(){const d=document.getElementById('listaTarjetasSimple');if(!d)return;d.innerHTML=misTarjetas.map(t=>`<div class="item"><div style="display:flex;justify-content:space-between;"><div><b>${t.nombre}</b> ${t.digitos?`• ••• ${t.digitos}`:''}<br><small style="color:#666">${t.banco||'Sin banco'} • ${t.tipo}</small></div><span style="color:red;cursor:pointer;" onclick="eliminarTarjeta(${t.id})">Eliminar</span></div></div>`).join('')}
+function agregarGasto(){const d=document.getElementById('descripcion').value.trim();const m=parseFloat(document.getElementById('monto').value);const tar=document.getElementById('tarjeta').value;const cat=document.getElementById('categoria').value;const cu=parseInt(document.getElementById('cuotas').value)||1;const f=document.getElementById('fecha').value||new Date().toISOString().slice(0,10);if(!d||!m)return alert('Completá descripción y monto');if(!tar)return alert('Elegí una tarjeta');gastos.push({id:Date.now(),descripcion:d,montoTotal:m,tarjeta:tar,categoria:cat,cuotas:cu,fechaInicio:f});document.getElementById('descripcion').value='';document.getElementById('monto').value='';document.getElementById('cuotas').value='1';guardar();organizadorIA();alert(`✅ Guardado en ${tar}: ${d} - ${cu} x ${formato(m/cu)}`);actualizarInfoTarjeta();irA('tarjetas')}
+function eliminar(id){if(!confirm('¿Eliminar este gasto?'))return;gastos=gastos.filter(g=>g.id!==id);guardar();organizadorIA()}
+function detalleCuotas(g){const hoy=new Date();const ma=hoy.getFullYear()*12+hoy.getMonth();const[y,m]=g.fechaInicio.split('-').map(Number);const vc=g.montoTotal/g.cuotas;const lista=[];let pa=0,re=0,fp=0;const nom=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];for(let i=0;i<g.cuotas;i++){let mn=(m-1)+i;let an=y+Math.floor(mn/12);let me=(mn%12)+1;let cl=an*12+(me-1);let es='pendiente';if(cl<ma){es='pagada';pa++}else if(cl===ma){es='este-mes';re++;fp+=vc}else{es='pendiente';re++;fp+=vc}lista.push({numero:i+1,etiqueta:`${nom[me-1]} ${an}`,monto:vc,estado:es,clave:cl})}return{lista,pagadas:pa,restantes:re,faltaPagar:fp,cuotaActual:pa+1}}
+function calcularCalendario(){const mapa={};gastos.forEach(g=>{const d=detalleCuotas(g);d.lista.forEach(c=>{mapa[c.etiqueta]=(mapa[c.etiqueta]||0)+c.monto})});const hoy=new Date();const nom=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];const ts=servicios.filter(s=>s.activo).reduce((a,s)=>a+s.monto,0);if(ts>0){for(let i=0;i<12;i++){let me=hoy.getMonth()+i;let an=hoy.getFullYear()+Math.floor(me/12);me=(me%12);const cl=`${nom[me]} ${an}`;mapa[cl]=(mapa[cl]||0)+ts}}return mapa}
+function cuotasPendientesPorTarjeta(nomTar){const mapa={};gastos.filter(g=>g.tarjeta===nomTar).forEach(g=>{const d=detalleCuotas(g);d.lista.forEach(c=>{if(c.estado==='pagada')return;if(!mapa[c.etiqueta])mapa[c.etiqueta]={etiqueta:c.etiqueta,monto:0,estado:c.estado,clave:c.clave,cant:0,detalle:[]};mapa[c.etiqueta].monto+=c.monto;mapa[c.etiqueta].cant++;mapa[c.etiqueta].detalle.push(`${g.descripcion} - Cuota ${c.numero}/${g.cuotas} (${formato(c.monto)})`);if(c.estado==='este-mes')mapa[c.etiqueta].estado='este-mes'})});return Object.values(mapa).sort((a,b)=>a.clave-b.clave)}
+function resumenPorTarjeta(){const t={};misTarjetas.forEach(x=>{t[x.nombre]={info:x,gastos:[],totalGastado:0,faltaPagar:0,cuotasRestantes:0,cuotasPagadas:0,esteMes:0}});gastos.forEach(g=>{if(!t[g.tarjeta])t[g.tarjeta]={info:null,gastos:[],totalGastado:0,faltaPagar:0,cuotasRestantes:0,cuotasPagadas:0,esteMes:0};const d=detalleCuotas(g);t[g.tarjeta].gastos.push(g);t[g.tarjeta].totalGastado+=g.montoTotal;t[g.tarjeta].faltaPagar+=d.faltaPagar;t[g.tarjeta].cuotasRestantes+=d.restantes;t[g.tarjeta].cuotasPagadas+=d.pagadas;const c=d.lista.find(x=>x.estado==='este-mes');if(c)t[g.tarjeta].esteMes+=c.monto});return t}
+function claseTarjeta(tipo){if(tipo==='Visa')return'tarjeta-visa';if(tipo==='American Express')return'tarjeta-amex';if(tipo==='Mastercard')return'tarjeta-master';if(tipo==='Efectivo / Débito')return'tarjeta-efectivo';return'tarjeta-otra'}
+function filtrarTarjeta(t){filtroTarjeta=t;mostrarTarjetas()}
+function mostrarTarjetas(){const cont=document.getElementById('listaTarjetas');const res=document.getElementById('resumenTarjetasInicio');const chips=document.getElementById('chipsTarjetas');if(!cont)return;const por=resumenPorTarjeta();const noms=Object.keys(por);if(chips)chips.innerHTML=`<span class="chip ${filtroTarjeta==='Todas'?'activo':''}" onclick="filtrarTarjeta('Todas')">Todas</span>`+noms.map(n=>`<span class="chip ${filtroTarjeta===n?'activo':''}" onclick="filtrarTarjeta('${n}')">${n}</span>`).join('');if(res){if(!gastos.length)res.innerHTML='<p style="color:#666">Sin gastos todavía.</p>';else res.innerHTML=noms.filter(n=>por[n].gastos.length>0).map(n=>{const r=por[n];return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span><b>${n}</b></span><span>Gastado <b>${formato(r.totalGastado)}</b> • Falta <b style="color:#d97706">${formato(r.faltaPagar)}</b></span></div>`}).join('')}cont.innerHTML='';const aMostrar=filtroTarjeta==='Todas'?noms:noms.filter(n=>n===filtroTarjeta);aMostrar.forEach(nombre=>{const r=por[nombre];const info=r.info;const div=document.createElement('div');div.className='tarjeta-card '+claseTarjeta(info?info.tipo:nombre);const esEf=info&&info.tipo==='Efectivo / Débito';const txt=esEf?'color:#111':'color:white';const pend=cuotasPendientesPorTarjeta(nombre);let htmlPend='';if(!pend.length)htmlPend=`<div style="background:rgba(255,255,255,0.15);padding:12px;border-radius:12px;margin-top:14px;">✅ Sin cuotas pendientes.</div>`;else htmlPend=`<div style="background:rgba(255,255,255,0.15);padding:12px;border-radius:12px;margin-top:14px;"><div style="font-weight:700;margin-bottom:8px;">📅 Cuotas pendientes mes a mes</div>${pend.map(p=>`<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.2);"><div style="display:flex;justify-content:space-between;"><span><b>${p.etiqueta}</b> • ${p.cant} cuota(s)</span><span><b>${formato(p.monto)}</b></span></div><div style="font-size:12px;opacity:0.9;">${p.estado==='este-mes'?'👉 Este mes':'⏳ Pendiente'} • ${p.detalle.join(' • ')}</div></div>`).join('')}<div style="display:flex;justify-content:space-between;margin-top:10px;"><span>Total pendiente:</span><b>${formato(r.faltaPagar)}</b></div></div>`;let htmlG='';if(!r.gastos.length)htmlG=`<p style="margin-top:12px;">Sin consumos todavía.</p>`;else htmlG=`<details style="margin-top:14px;"><summary style="font-weight:700;cursor:pointer;">Ver consumos de esta tarjeta 👇</summary>`+r.gastos.map(g=>{const d=detalleCuotas(g);const vc=g.montoTotal/g.cuotas;return `<div style="padding:10px 0;border-top:1px solid rgba(255,255,255,0.25);"><div style="display:flex;justify-content:space-between;"><div><b>${g.descripcion}</b><br><small>${g.categoria} • ${g.cuotas} x ${formato(vc)} • ${g.fechaInicio}</small></div><div style="text-align:right;"><b>${formato(g.montoTotal)}</b><br><span style="color:#ffcccc;cursor:pointer;font-size:13px;" onclick="eliminar(${g.id})">Eliminar</span></div></div><div style="font-size:13px;margin-top:6px;">Cuota ${Math.min(d.cuotaActual,g.cuotas)} de ${g.cuotas} • Te quedan ${d.restantes} • Falta ${formato(d.faltaPagar)}</div></div>`}).join('')+`</details>`;div.innerHTML=`<div style="${txt}"><h3 style="margin:0;">💳 ${nombre}</h3>${info?`<div style="font-size:13px;opacity:0.9;margin-top:6px;">${info.banco||''} ${info.digitos?`• ••• ${info.digitos}`:''} ${info.vencimiento?`• Vence ${info.vencimiento}`:''} ${info.limite?`• Límite ${formato(info.limite)}`:''}</div>`:''}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;text-align:center;"><div style="background:rgba(255,255,255,0.2);padding:10px;border-radius:12px;"><div style="font-size:12px;">GASTADO</div><b>${formato(r.totalGastado)}</b></div><div style="background:rgba(255,255,255,0.2);padding:10px;border-radius:12px;"><div style="font-size:12px;">FALTA PAGAR</div><b>${formato(r.faltaPagar)}</b></div><div style="background:rgba(255,255,255,0.2);padding:10px;border-radius:12px;"><div style="font-size:12px;">CUOTAS QUE QUEDAN</div><b>${r.cuotasRestantes}</b></div></div><div style="margin-top:10px;font-size:14px;">Este mes: <b>${formato(r.esteMes)}</b> • ${r.cuotasPagadas} pagadas</div><button class="btn-blanco" onclick="cargarEnTarjeta('${nombre}')">➕ Cargar consumo en ${nombre}</button>${htmlPend}${htmlG}</div>`;cont.appendChild(div)})}
+function mostrar(){const l=document.getElementById('lista');if(l){l.innerHTML='';if(!gastos.length)l.innerHTML='<p style="color:#666">Sin consumos. Tocá ➕ Cargar arriba.</p>';[...gastos].slice(-5).reverse().forEach(g=>{const d=detalleCuotas(g);const vc=g.montoTotal/g.cuotas;const div=document.createElement('div');div.className='item';div.innerHTML=`<div style="display:flex;justify-content:space-between;"><div><b>${g.descripcion}</b><br><small style="color:#666">${g.tarjeta} • ${g.categoria} • ${g.cuotas} x ${formato(vc)} • ${g.fechaInicio}</small></div><div style="text-align:right;"><b>${formato(g.montoTotal)}</b><br><span style="color:red;cursor:pointer;" onclick="eliminar(${g.id})">Eliminar</span></div></div>`;l.appendChild(div)})}const cal=calcularCalendario();const cd=document.getElementById('calendario');if(cd){cd.innerHTML='';Object.keys(cal).forEach(k=>{cd.innerHTML+=`<div class="mes"><span>${k}</span><b>${formato(cal[k])}</b></div>`})}}
+function agregarServicio(){const n=document.getElementById('serv-nombre').value.trim();const m=parseFloat(document.getElementById('serv-monto').value);const dia=parseInt(document.getElementById('serv-dia').value)||10;const cat=document.getElementById('serv-categoria').value;if(!n)return alert('Completá el nombre');servicios.push({id:Date.now(),nombre:n,monto:m||0,dia,categoria:cat,activo:true});document.getElementById('serv-nombre').value='';document.getElementById('serv-monto').value='';guardarServicios();alert('✅ Servicio agregado')}
+function eliminarServicio(id){if(!confirm('¿Eliminar?'))return;servicios=servicios.filter(s=>s.id!==id);guardarServicios()}
+function toggleServicio(id){const s=servicios.find(x=>x.id===id);if(s)s.activo=!s.activo;guardarServicios()}
+function editarMontoServicio(id){const s=servicios.find(x=>x.id===id);if(!s)return;const nv=prompt(`Nuevo monto para ${s.nombre}:`,s.monto||'');if(nv===null)return;const v=parseFloat(nv);if(isNaN(v))return;s.monto=v;guardarServicios()}
+function editarDiaServicio(id){const s=servicios.find(x=>x.id===id);if(!s)return;const nv=prompt(`Nuevo día para ${s.nombre}:`,s.dia);if(nv===null)return;const v=parseInt(nv);if(isNaN(v))return;s.dia=v;guardarServicios()}
+function mostrarServicios(){const l=document.getElementById('listaServicios');const t=document.getElementById('totalServicios');if(!l)return;l.innerHTML='';servicios.forEach(s=>{const d=document.createElement('div');d.className='item';d.style.opacity=s.activo?'1':'0.5';d.innerHTML=`<div style="display:flex;justify-content:space-between;"><div><b>${s.nombre}</b><br><small style="color:#666">${s.categoria} • Vence día <span style="text-decoration:underline;cursor:pointer;" onclick="editarDiaServicio(${s.id})">${s.dia} ✏️</span></small></div><div style="text-align:right;"><b style="cursor:pointer;text-decoration:underline;" onclick="editarMontoServicio(${s.id})">${formato(s.monto)} ✏️</b><br><span style="color:#4f46e5;cursor:pointer;font-size:13px;" onclick="toggleServicio(${s.id})">${s.activo?'Pausar':'Activar'}</span> • <span style="color:red;cursor:pointer;font-size:13px;" onclick="eliminarServicio(${s.id})">Eliminar</span></div></div>`;l.appendChild(d)});const tot=servicios.filter(s=>s.activo).reduce((a,s)=>a+s.monto,0);if(t)t.innerHTML=`<div style="background:#eef2ff;padding:12px;border-radius:10px;display:flex;justify-content:space-between;"><span><b>Total servicios / mes:</b></span><b>${formato(tot)}</b></div>`}
+function organizadorIA(){const b=document.getElementById('iaBox');if(!b)return;let sug=[];sug.push(`💰 Este mes ingresás <b>${formato(totalIngresosMes())}</b>.`);const por=resumenPorTarjeta();Object.keys(por).forEach(n=>{const r=por[n];if(r.gastos.length>0){sug.push(`💳 <b>${n}</b>: gastado ${formato(r.totalGastado)}, faltan ${r.cuotasRestantes} cuotas por ${formato(r.faltaPagar)}.`);const p=cuotasPendientesPorTarjeta(n);if(p.length)sug.push(`📅 ${n} mes a mes: `+p.map(x=>`${x.etiqueta} ${formato(x.monto)}`).join(' • '))}});if(servicios.length){const tot=servicios.filter(s=>s.activo).reduce((a,s)=>a+s.monto,0);sug.push(`🧾 Servicios: ${formato(tot)} / mes.`)}b.innerHTML=sug.map(s=>`<div class="sugerencia">${s}</div>`).join('')}
+function exportarExcel(){let csv="CUOTAS PENDIENTES MES A MES POR TARJETA\nTarjeta;Mes;Monto;Cuotas;Detalle\n";const por=resumenPorTarjeta();Object.keys(por).forEach(n=>{cuotasPendientesPorTarjeta(n).forEach(p=>{csv+=`${n};${p.etiqueta};${p.monto};${p.cant};${p.detalle.join(' | ')}\n`})});csv+="\nCONSUMOS\nDescripcion;Monto;Tarjeta;Categoria;Cuotas;Fecha\n";gastos.forEach(g=>{csv+=`${g.descripcion};${g.montoTotal};${g.tarjeta};${g.categoria};${g.cuotas};${g.fechaInicio}\n`});const blob=new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mis-gastos.csv';a.click()}
+function analizarResumen(){
+  const texto=document.getElementById('resumen-texto').value.trim();
+  const tarjeta=document.getElementById('resumen-tarjeta').value;
+  const preview=document.getElementById('previewResumen');
+  if(!texto) return alert('Pegá primero el resumen');
+  if(!tarjeta) return alert('Elegí la tarjeta');
+  resumenDetectado=[];
+  texto.split('\n').forEach(lineaRaw=>{
+    let linea=lineaRaw.trim(); if(!linea) return;
+    let montoMatch=linea.match(/\$?\s*([\d\.]{3,}[,\d]*)/); if(!montoMatch) return;
+    let monto=parseFloat(montoMatch[1].replace(/\./g,'').replace(',','.')); if(!monto||monto<100) return;
+    let cuotaMatch=linea.match(/(\d{1,2})\s*\/\s*(\d{1,2})|cuota\s*(\d{1,2})\s*de\s*(\d{1,2})/i);
+    let cuotaActual=1, cuotasTotales=1;
+    if(cuotaMatch){ cuotaActual=parseInt(cuotaMatch[1]||cuotaMatch[3]); cuotasTotales=parseInt(cuotaMatch[2]||cuotaMatch[4]); }
+    let desc=linea.replace(montoMatch[0],'').replace(/cuota\s*\d+\s*(de|\/)\s*\d+/gi,'').replace(/\d+\s*\/\s*\d+/g,'').replace(/\$|•|-$/g,'').trim();
+    if(!desc) desc='Consumo '+tarjeta; if(desc.length>40) desc=desc.slice(0,40);
+    const hoy=new Date(); let fechaInicio=new Date(hoy.getFullYear(), hoy.getMonth()-(cuotaActual-1), 1);
+    resumenDetectado.push({descripcion:desc, montoTotal:monto*cuotasTotales, tarjeta, categoria:'Otros', cuotas:cuotasTotales, fechaInicio:fechaInicio.toISOString().slice(0,10), cuotaActual, valorCuota:monto});
+  });
+  if(!resumenDetectado.length){ preview.innerHTML=`<p style="color:red;">No detecté nada. Probá pegar así:<br>Supermercado 2/3 $30000</p>`; return; }
+  preview.innerHTML=`<div style="margin-top:14px;background:#ecfdf5;padding:14px;border-radius:12px;"><b>✅ Detecté ${resumenDetectado.length} consumos en ${tarjeta}:</b>${resumenDetectado.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;"><span><b>${r.descripcion}</b><br><small>Cuota ${r.cuotaActual} de ${r.cuotas} • Total ${formato(r.montoTotal)}</small></span><span><b>${formato(r.valorCuota)} /mes</b><br><span style="color:red;cursor:pointer;font-size:13px;" onclick="quitarDeResumen(${i})">Quitar</span></span></div>`).join('')}<div style="display:flex;justify-content:space-between;margin-top:10px;"><span><b>Total cuotas este mes:</b></span><b>${formato(resumenDetectado.reduce((a,r)=>a+r.valorCuota,0))}</b></div><button class="btn btn-green" onclick="importarResumen()">✅ Importar todo a ${tarjeta}</button></div>`;
+}
+function quitarDeResumen(i){ resumenDetectado.splice(i,1); if(!resumenDetectado.length){document.getElementById('previewResumen').innerHTML='';return;} document.getElementById('resumen-texto').value=resumenDetectado.map(r=>`${r.descripcion} ${r.cuotaActual}/${r.cuotas} $${r.valorCuota}`).join('\n'); analizarResumen(); }
+function importarResumen(){
+  if(!resumenDetectado.length) return alert('Nada para importar');
+  let importados=0;
+  resumenDetectado.forEach(r=>{
+    const existe=gastos.some(g=>g.tarjeta===r.tarjeta && g.descripcion.toLowerCase()===r.descripcion.toLowerCase() && g.montoTotal===r.montoTotal);
+    if(!existe){ gastos.push({id:Date.now()+Math.random(), descripcion:r.descripcion, montoTotal:r.montoTotal, tarjeta:r.tarjeta, categoria:r.categoria, cuotas:r.cuotas, fechaInicio:r.fechaInicio}); importados++; }
+  });
+  document.getElementById('resumen-texto').value=''; document.getElementById('previewResumen').innerHTML=''; resumenDetectado=[];
+  guardar(); organizadorIA(); alert(`✅ Importados ${importados} consumos.`); irA('tarjetas');
+}
+function agregarResumenTotal(){
+  const tarjeta=document.getElementById('resumen-total-tarjeta').value;
+  const monto=parseFloat(document.getElementById('resumen-total-monto').value);
+  const cuotas=parseInt(document.getElementById('resumen-total-cuotas').value)||1;
+  const desc=document.getElementById('resumen-total-desc').value.trim() || `Resumen ${tarjeta}`;
+  if(!monto) return alert('Poné el total a pagar');
+  gastos.push({id:Date.now(), descripcion:desc, montoTotal:monto, tarjeta, categoria:'Tarjeta', cuotas, fechaInicio:new Date().toISOString().slice(0,10)});
+  document.getElementById('resumen-total-monto').value=''; document.getElementById('resumen-total-desc').value='';
+  guardar(); organizadorIA(); alert(`✅ Guardado en ${tarjeta}: ${desc} - ${cuotas} x ${formato(monto/cuotas)}`); irA('tarjetas');
+}
+document.getElementById('fecha').valueAsDate=new Date();
+document.getElementById('ing-fecha').valueAsDate=new Date();
+document.getElementById('tarjeta').addEventListener('change',actualizarInfoTarjeta);
+document.getElementById('monto').addEventListener('input',actualizarInfoTarjeta);
+document.getElementById('cuotas').addEventListener('input',actualizarInfoTarjeta);
+mostrar();mostrarServicios();mostrarTarjetas();mostrarIngresos();actualizarSelectTarjetas();actualizarSelectResumen();organizadorIA();mostrarBalance();actualizarInfoTarjeta();
+</script>
+</body>
+</html>
