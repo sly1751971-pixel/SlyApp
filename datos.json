@@ -1,0 +1,32 @@
+{
+  "version": 8,
+  "ingresos": [
+    { "id": 201, "descripcion": "Sueldo", "monto": 0, "tipo": "Sueldo", "fecha": "2026-11-26", "fijo": true },
+    { "id": 202, "descripcion": "Jubilación / ANSES", "monto": 0, "tipo": "Jubilación / ANSES", "fecha": "2026-11-26", "fijo": true }
+  ],
+  "tarjetas": [
+    { "id": 1, "nombre": "Visa", "banco": "", "tipo": "Visa", "digitos": "", "limite": 0, "cierre": 0, "vencimiento": 5, "activa": true },
+    { "id": 2, "nombre": "American Express", "banco": "", "tipo": "American Express", "digitos": "", "limite": 0, "cierre": 0, "vencimiento": 5, "activa": true },
+    { "id": 3, "nombre": "Mastercard", "banco": "", "tipo": "Mastercard", "digitos": "", "limite": 0, "cierre": 0, "vencimiento": 5, "activa": true },
+    { "id": 4, "nombre": "Efectivo / Débito", "banco": "", "tipo": "Efectivo / Débito", "digitos": "", "limite": 0, "cierre": 0, "vencimiento": 0, "activa": true }
+  ],
+  "gastos": [
+    { "id": 1, "descripcion": "Supermercado", "montoTotal": 85000, "tarjeta": "Visa", "categoria": "Comida", "cuotas": 1, "fechaInicio": "2026-11-26" },
+    { "id": 2, "descripcion": "Ejemplo Amex en cuotas", "montoTotal": 120000, "tarjeta": "American Express", "categoria": "Casa", "cuotas": 3, "fechaInicio": "2026-11-10" },
+    { "id": 3, "descripcion": "Ejemplo Visa en cuotas", "montoTotal": 90000, "tarjeta": "Visa", "categoria": "Ropa", "cuotas": 3, "fechaInicio": "2026-11-05" }
+  ],
+  "servicios": [
+    { "id": 101, "nombre": "Alquiler", "monto": 0, "dia": 10, "categoria": "Casa", "activo": true },
+    { "id": 102, "nombre": "Edesur (Luz)", "monto": 0, "dia": 15, "categoria": "Casa", "activo": true },
+    { "id": 103, "nombre": "Metrogas (Gas)", "monto": 0, "dia": 15, "categoria": "Casa", "activo": true },
+    { "id": 104, "nombre": "AySA (Agua)", "monto": 0, "dia": 20, "categoria": "Casa", "activo": true },
+    { "id": 105, "nombre": "ABL", "monto": 0, "dia": 10, "categoria": "Casa", "activo": true },
+    { "id": 106, "nombre": "Visa - Resumen", "monto": 0, "dia": 5, "categoria": "Tarjeta", "activo": true },
+    { "id": 107, "nombre": "Amex - Resumen", "monto": 0, "dia": 5, "categoria": "Tarjeta", "activo": true },
+    { "id": 108, "nombre": "Internet", "monto": 0, "dia": 10, "categoria": "Internet / Celular", "activo": true },
+    { "id": 109, "nombre": "Comida gatos", "monto": 0, "dia": 1, "categoria": "Mascotas", "activo": true },
+    { "id": 110, "nombre": "Piedritas", "monto": 0, "dia": 1, "categoria": "Mascotas", "activo": true },
+    { "id": 111, "nombre": "Crédito ANSES", "monto": 0, "dia": 10, "categoria": "Préstamo", "activo": true },
+    { "id": 112, "nombre": "Yo - Gastos personales", "monto": 0, "dia": 1, "categoria": "Yo", "activo": true }
+  ]
+}
