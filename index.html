@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlyApp - Mis Finanzas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f1f5f9;padding-bottom:115px;color:#1e293b}
+header{background:#0f172a;color:white;padding:18px;text-align:center;position:sticky;top:0;z-index:10;cursor:pointer;user-select:none}
+header h1{font-size:20px}header p{font-size:13px;opacity:.8}
+.container{max-width:520px;margin:0 auto;padding:14px}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+h2{font-size:17px;margin-bottom:10px}h3{font-size:15px;margin:14px 0 8px}
+label{font-size:13px;font-weight:600;display:block;margin-top:10px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;margin-top:4px;font-size:15px;background:white}
+textarea{min-height:180px}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px}
+.btn-green{background:#16a34a;color:white}.btn-blue{background:#2563eb;color:white}.btn-gray{background:#e2e8f0;color:#334155}.btn-orange{background:#ea580c;color:white}.btn-red{background:#dc2626;color:white}.btn-dark{background:#0f172a;color:white}.btn-purple{background:#7c3aed;color:white}.btn-teal{background:#0d9488;color:white}.btn-pink{background:#db2777;color:white}
+.fila{display:flex;gap:8px}.fila .btn{flex:1}
+.total{font-size:28px;font-weight:800}.mutual{font-size:13px;color:#64748b}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;gap:8px}
+.x{color:red;cursor:pointer;font-weight:800;padding:6px 10px;font-size:18px}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;overflow-x:auto;border-top:2px solid #2563eb;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:999;box-shadow:0 -2px 10px rgba(0,0,0,.1)}
+.bottom button{flex:1;min-width:62px;background:none;border:none;padding:8px 2px;font-size:12px;cursor:pointer;color:#64748b;line-height:1.2;white-space:nowrap}
+.bottom button.activo{color:#2563eb;font-weight:800;background:#eff6ff;border-radius:10px}
+.mesBox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px}
+.alerta{background:#fef3c7;border:1px solid #fbbf24;padding:12px;border-radius:12px;font-size:14px}
+.alerta-verde{background:#dcfce7;border:1px solid #16a34a;padding:12px;border-radius:12px;font-size:14px}
+.badge{background:#16a34a;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-rojo{background:#dc2626;color:white;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:800}
+.cuotaRow{display:flex;justify-content:space-between;gap:8px;padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:13px}
+.debug{background:#0f172a;color:#a7f3d0;padding:10px;border-radius:10px;font-size:12px;white-space:pre-wrap;word-break:break-word;margin-top:10px}
+.controlTotal{background:#0f172a;color:white;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+.controlConsumo{background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:5px solid #2563eb}
+.controlConsumo.ultima{border-left-color:#dc2626;background:#fff5f5}
+.controlConsumo.destacada{border-left-color:#ea580c;background:#fffbeb}
+.cuotaGrande{display:inline-block;background:#2563eb;color:white;padding:6px 12px;border-radius:12px;font-weight:800;font-size:18px;margin:6px 0}
+.cuotaGrande.rojo{background:#dc2626}.cuotaGrande.naranja{background:#ea580c}
+.btn-mini{padding:8px 10px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer}
+.mesFila{background:white;border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;border:2px solid transparent}
+.mesFila.abierto{border-color:#2563eb}
+.mesGrande{font-size:22px;font-weight:800;text-transform:uppercase}
+.cierreGrande{background:#fef3c7;border-radius:14px;padding:14px;text-align:center;margin:10px 0}
+.cierreGrande b{font-size:20px}
+.sueldoTop{background:#16a34a;color:white;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+.calHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.calHead button{border:none;background:#0f172a;color:white;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:13px}
+.calDia{padding:9px 2px;border-radius:10px;cursor:pointer;background:#f8fafc;border:1px solid #e2e8f0;min-height:44px}
+.calDia.hoy{background:#2563eb;color:white;font-weight:800}
+.calDia.sel{background:#0f172a;color:white;font-weight:800}
+.calDia.vacio{background:transparent;border:none;cursor:default}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin:1px}
+.punto-venc{background:#dc2626}.punto-turno{background:#2563eb}.punto-tarea{background:#16a34a}.punto-nota{background:#ea580c}.punto-cierre{background:#7c3aed}.punto-promo{background:#db2777}
+.sidebar{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sideBtn{border:none;border-radius:16px;padding:16px 10px;color:white;font-weight:800;font-size:15px;cursor:pointer;text-align:left;line-height:1.3}
+.sideBtn small{display:block;font-weight:400;opacity:.9;font-size:12px}
+.s-ing{background:#16a34a}.s-gas{background:#ea580c}.s-tar{background:#2563eb}.s-ctrl{background:#0f172a}.s-gmes{background:#7c3aed}.s-suel{background:#0d9488}.s-res{background:#0284c7}.s-cal{background:#475569}.s-promo{background:#db2777}
+.chip{display:inline-block;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:800;color:white}
+.chip-venc{background:#dc2626}.chip-turno{background:#2563eb}.chip-tarea{background:#16a34a}.chip-nota{background:#ea580c}.chip-cierre{background:#7c3aed}.chip-promo{background:#db2777}
+.promoCard{background:#fdf2f8;border:1px solid #fbcfe8;border-radius:14px;padding:12px;margin-bottom:8px}
+.diaBtn{padding:10px 6px;border:1px solid #e2e8f0;background:white;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px}
+.diaBtn.activo{background:#db2777;color:white;border-color:#db2777}
+</style>
+</head>
+<body>
+<header id="cabecera"><h1>💳 SlyApp</h1><p>Ingresos • Gastos • Tarjetas • Cuotas</p></header>
+<div class="container" id="app"><div class="card"><p>Cargando...</p></div></div>
+<nav class="bottom">
+<button onclick="mostrar('inicio')" id="b-inicio">🏠<br>Inicio</button>
+<button onclick="mostrar('control')" id="b-control">🎯<br>Control</button>
+<button onclick="mostrar('ingresos')" id="b-ingresos">💰<br>Ingresos</button>
+<button onclick="mostrar('gastos')" id="b-gastos">🧾<br>Gastos</button>
+<button onclick="mostrar('gastosmes')" id="b-gastosmes">📆<br>Gastos Mes</button>
+<button onclick="mostrar('sueldo')" id="b-sueldo">💵<br>Sueldo</button>
+<button onclick="mostrar('tarjetas')" id="b-tarjetas">💳<br>Tarjetas</button>
+<button onclick="mostrar('promos')" id="b-promos">🎁<br>Promos</button>
+<button onclick="mostrar('agregar')" id="b-agregar">➕<br>Agregar</button>
+<button onclick="mostrar('resumen')" id="b-resumen">📄<br>Resumen</button>
+<button onclick="mostrar('calendario')" id="b-calendario">📅<br>Calendario</button>
+</nav>
+<script>
+try{
+function baseVacia(){return {tarjetas:[{nombre:'Visa',banco:'Visa',ultimos:'',cierreDia:19},{nombre:'Amex',banco:'Amex',ultimos:'',cierreDia:26}],consumos:[],ingresos:[],gastos:[],eventos:[],billeteras:[],promos:[],cierre:'19/11/2026',vencimiento:'01/12/2026',proxCierre:'23/12/2026',proxVencimiento:'04/01/2027',cierres:[{cierre:'19/11/2026',vencimiento:'01/12/2026'},{cierre:'23/12/2026',vencimiento:'04/01/2027'}],tarjetasOcultas:[],consumosOcultos:[],pin:'1234'};}
+function aprox(){return [['22/01/2027','03/02/2027'],['21/02/2027','05/03/2027'],['23/03/2027','04/04/2027'],['22/04/2027','04/05/2027'],['21/05/2027','02/06/2027'],['22/06/2027','04/07/2027']];}
+function cargarTodo(){
+  let base=baseVacia();
+  ['slyapp_v59','slyapp_v58','slyapp_v57','slyapp_v56','slyapp_v55','slyapp_v54','slyapp_v53','slyapp_v52','slyapp_v51','slyapp_v50'].forEach(k=>{
+    try{let d=JSON.parse(localStorage.getItem(k)||'null');if(!d)return;
+      if(d.tarjetas&&d.tarjetas.length>base.tarjetas.length)base.tarjetas=d.tarjetas;
+      else if(d.tarjetas&&d.tarjetas.length)base.tarjetas=d.tarjetas;
+      if(d.consumos&&d.consumos.length>base.consumos.length)base.consumos=d.consumos;
+      if(d.ingresos&&d.ingresos.length>base.ingresos.length)base.ingresos=d.ingresos;
+      if(d.gastos&&d.gastos.length>base.gastos.length)base.gastos=d.gastos;
+      if(d.eventos&&d.eventos.length>base.eventos.length)base.eventos=d.eventos;
+      if(d.billeteras&&d.billeteras.length>base.billeteras.length)base.billeteras=d.billeteras;
+      if(d.promos&&d.promos.length>base.promos.length)base.promos=d.promos;
+      if(d.cierre)base.cierre=d.cierre;if(d.vencimiento)base.vencimiento=d.vencimiento;
+      if(d.proxCierre)base.proxCierre=d.proxCierre;if(d.proxVencimiento)base.proxVencimiento=d.proxVencimiento;
+      if(d.cierres&&d.cierres.length)base.cierres=d.cierres;
+      if(d.tarjetasOcultas)base.tarjetasOcultas=d.tarjetasOcultas;
+      if(d.consumosOcultos)base.consumosOcultos=d.consumosOcultos;
+      if(d.pin)base.pin=d.pin;
+    }catch(e){}
+  });
+  // FIX CIERRE POR TARJETA - v60
+  base.tarjetas.forEach(t=>{
+    let n=String(t.nombre||'').toLowerCase();
+    if(n.includes('visa') && !t.cierreDia) t.cierreDia=19;
+    if(n.includes('amex') && !t.cierreDia) t.cierreDia=26;
+    if(!t.cierreDia) t.cierreDia=19;
+  });
+  if(!base.tarjetas.some(t=>String(t.nombre||'').toLowerCase().includes('visa'))) base.tarjetas.push({nombre:'Visa',banco:'Visa',ultimos:'',cierreDia:19});
+  if(!base.tarjetas.some(t=>String(t.nombre||'').toLowerCase().includes('amex'))) base.tarjetas.push({nombre:'Amex',banco:'Amex',ultimos:'',cierreDia:26});
+  aprox().forEach(a=>{if(!base.cierres.some(c=>c.cierre===a[0]))base.cierres.push({cierre:a[0],vencimiento:a[1]});});
+  base.cierres.sort((a,b)=>pf(a.cierre)-pf(b.cierre));
+  return base;
+}
+let datos=cargarTodo();
+let vista='inicio',resumenDetectado=[],desbloqueado=false,controlTarjeta='',mesAbierto='2026-11',mesAbiertoGasto='2026-11',mesSueldo='',mesCal=new Date(new Date().getFullYear(),new Date().getMonth(),1),diaSel=new Date().toISOString().slice(0,10),diaPromo='Todos';
+function meses(){let arr=[],d=new Date(new Date().getFullYear(),new Date().getMonth(),1),fin=new Date(2027,5,1);while(d<=fin){arr.push(clave(d));d=new Date(d.getFullYear(),d.getMonth()+1,1);}return arr;}
+function guardar(){try{localStorage.setItem('slyapp_v60',JSON.stringify(datos));}catch(e){}}
+function fmt(n){return '$ '+(Number(n)||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const ML=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+function clave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function claveF(f){try{return clave(new Date(f+'T00:00:00'));}catch(e){return null;}}
+function pf(s){if(!s)return new Date();let p=s.split('/');return new Date(p[2],p[1]-1,p[0]);}
+function aISO(s){if(!s)return '';if(s.includes('/')){let p=s.split('/');return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');}return s;}
+function fechaCompra(c){try{if(c.fechaCompraReal){let p=String(c.fechaCompraReal).split('/');if(p.length===3)return p[0]+' de '+ML[p[1]-1]+' '+p[2];}let d=new Date(c.fechaInicio+'T00:00:00');return d.getDate()+' de '+ML[d.getMonth()]+' '+d.getFullYear();}catch(e){return '';}}
+// --- REGLA CIERRE v60 ---
+function getCierreDia(nombreTarjeta){
+  let t=datos.tarjetas.find(t=>t.nombre===nombreTarjeta);
+  if(t && t.cierreDia) return parseInt(t.cierreDia);
+  let n=String(nombreTarjeta||'').toLowerCase();
+  if(n.includes('amex')) return 26;
+  return 19;
+}
+function inicioCuota(c){
+  let ini=new Date(c.fechaInicio+'T00:00:00');
+  let diaCierre=getCierreDia(c.tarjeta);
+  // Si compró DESPUÉS del cierre, la 1ra cuota es el mes siguiente
+  if(ini.getDate()>diaCierre){
+    return new Date(ini.getFullYear(), ini.getMonth()+1, 1);
+  }
+  return new Date(ini.getFullYear(), ini.getMonth(), 1);
+}
+function cuotaMes(c,k){try{let ini=inicioCuota(c),p=k.split('-'),dif=(+p[0]-ini.getFullYear())*12+(+p[1]-1-ini.getMonth());if(dif<0||dif>=c.cuotas)return 0;return c.montoTotal/c.cuotas;}catch(e){return 0;}}
+function numCuota(c,y,m){let ini=inicioCuota(c);return (y-ini.getFullYear())*12+(m-ini.getMonth())+1;}
+function totalMes(k,f){return datos.consumos.filter(c=>!f||c.tarjeta===f).reduce((a,c)=>a+cuotaMes(c,k),0);}
+function consMes(k,f){return datos.consumos.filter(c=>(!f||c.tarjeta===f)&&cuotaMes(c,k)>0).sort((a,b)=>new Date(a.fechaInicio)-new Date(b.fechaInicio));}
+function totalGastado(f){return datos.consumos.filter(c=>!f||c.tarjeta===f).reduce((a,c)=>a+(+c.montoTotal||0),0);}
+function cierreObj(y,m){let e=datos.cierres.find(c=>{let f=pf(c.cierre);return f.getFullYear()===y&&f.getMonth()===m;});return e||null;}
+function cierreDe(y,m){let e=cierreObj(y,m);return e?e.cierre:'Sin cargar';}
+function vtoDe(y,m){let e=cierreObj(y,m);return e?e.vencimiento:'Sin cargar';}
+function gastosMes(y,m){return datos.gastos.filter(g=>{if(!g.fecha)return y===new Date().getFullYear()&&m===new Date().getMonth();let f=new Date(g.fecha+'T00:00:00');return f.getFullYear()===y&&f.getMonth()===m;});}
+function gastosDeClave(k){let p=k.split('-');return gastosMes(+p[0],+p[1]-1);}
+function totalGastosMes(y,m){return gastosMes(y,m).reduce((a,g)=>a+(+g.monto||0),0);}
+function totalGastosClave(k){return gastosDeClave(k).reduce((a,g)=>a+(+g.monto||0),0);}
+function ingresosMes(k){return datos.ingresos.filter(i=>!i.fecha||claveF(i.fecha)===k);}
+function totalIngresosMes(k){return ingresosMes(k).reduce((a,i)=>a+(+i.monto||0),0);}
+function pedirCodigo(){let c=prompt('Ingresá el código:');if(c===null)return;if(c===datos.pin){desbloqueado=true;vista='ocultas';render();}else alert('❌ Código incorrecto');}
+(function(){let cab=document.getElementById('cabecera'),t=0,u=0;cab.addEventListener('click',()=>{let a=Date.now();if(a-u>1500)t=0;u=a;t++;if(t>=5){t=0;pedirCodigo();}});if(location.hash==='#ocultas')setTimeout(pedirCodigo,600);})();
+function mostrar(v){vista=v;if(v==='inicio'){mesCal=new Date(new Date().getFullYear(),new Date().getMonth(),1);diaSel=new Date().toISOString().slice(0,10);}document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('activo'));let b=document.getElementById('b-'+v);if(b)b.classList.add('activo');render();window.scrollTo(0,0);}
+function toggleMes(k){mesAbierto=(mesAbierto===k?'':k);render();}
+function toggleMesGasto(k){mesAbiertoGasto=(mesAbiertoGasto===k?'':k);render();}
+function cambiarMesCal(n){mesCal=new Date(mesCal.getFullYear(),mesCal.getMonth()+n,1);render();}
+function seleccionarDia(f){diaSel=f;let d=new Date(f+'T00:00:00');mesCal=new Date(d.getFullYear(),d.getMonth(),1);render();}
+function eventosDia(f){return datos.eventos.filter(e=>aISO(e.fecha)===f);}
+function promosDia(f){let ds=DIAS[new Date(f+'T00:00:00').getDay()];return datos.promos.filter(p=>p.dia==='Todos'||p.dia===ds||(p.fecha&&aISO(p.fecha)===f));}
+function nombreTipo(t){return t==='venc'?'🔴 Vencimiento':t==='turno'?'🔵 Turno':t==='tarea'?'🟢 Para hacer':'🟠 Nota';}
+function chipTipo(t){return t==='venc'?'chip-venc':t==='turno'?'chip-turno':t==='tarea'?'chip-tarea':'chip-nota';}
+function editarCierreMes(y,m){let nc=prompt('Cierre de '+ML[m]+' (DD/MM/AAAA):',cierreDe(y,m));if(nc===null)return;let nv=prompt('Vencimiento de '+ML[m]+' (DD/MM/AAAA):',vtoDe(y,m));if(nv===null)return;let e=cierreObj(y,m);if(e){e.cierre=nc.trim();e.vencimiento=nv.trim();}else{datos.cierres.push({cierre:nc.trim(),vencimiento:nv.trim()});}guardar();render();}
+function editarCierreLista(i){let c=datos.cierres[i];let nc=prompt('Cierre:',c.cierre);if(nc===null)return;let nv=prompt('Vencimiento:',c.vencimiento);if(nv===null)return;c.cierre=nc.trim();c.vencimiento=nv.trim();guardar();render();}
+function editarCierreDiaTarjeta(nombre){let t=datos.tarjetas.find(x=>x.nombre===nombre);let nv=prompt('¿Qué día cierra '+nombre+'? Ej: 19 o 26',t.cierreDia||19);if(nv===null)return;t.cierreDia=parseInt(nv)||19;guardar();render();}
+function tarjetaControl(c,y,m){
+  let num=numCuota(c,y,m),cm=c.montoTotal/c.cuotas,ult=num===c.cuotas,cl=ult?'rojo':(num>=c.cuotas-2?'naranja':''),idx=datos.consumos.indexOf(c),clase=ult?'ultima':(num>=c.cuotas-2?'destacada':'');
+  return '<div class="controlConsumo '+clase+'"><div style="display:flex;justify-content:space-between"><div><b style="font-size:18px">'+c.descripcion+'</b><br><span class="mutual">'+c.tarjeta+' • 📅 '+fechaCompra(c)+' • Cierra día '+getCierreDia(c.tarjeta)+'</span></div><span class="x" onclick="borrarConsumo('+idx+')">✕</span></div><div><span class="cuotaGrande '+cl+'">'+num+'/'+c.cuotas+'</span>'+(ult?' <span class="badge-rojo">🔥 Última cuota</span>':'')+'</div><div><b>Monto a pagar de esta cuota: '+fmt(cm)+'</b></div><div><b>Monto total de la compra: '+fmt(c.montoTotal)+'</b></div><div style="margin-top:10px;display:flex;gap:8px"><button class="btn-mini" style="background:#e2e8f0;flex:1" onclick="editarConsumo('+idx+')">✏️ Editar</button><button class="btn-mini" style="background:#fee2e2;flex:1" onclick="borrarConsumo('+idx+')">🗑 Borrar</button></div></div>';
+}
+function editarConsumo(i){let c=datos.consumos[i];let d1=prompt('¿Qué compraste?',c.descripcion);if(d1===null)return;let m1=prompt('Monto total:',c.montoTotal);if(m1===null)return;let cu=prompt('Cuotas:',c.cuotas);if(cu===null)return;let f1=prompt('Fecha (AAAA-MM-DD):',c.fechaInicio);if(f1===null)return;c.descripcion=d1;c.montoTotal=parseFloat(m1);c.cuotas=parseInt(cu)||1;c.fechaInicio=f1;c.valorCuota=c.montoTotal/c.cuotas;c.fechaCompraReal=f1;guardar();render();}
+function editarIngreso(i){let x=datos.ingresos[i];let d1=prompt('¿Qué cobraste?',x.descripcion);if(d1===null)return;let m1=prompt('Monto:',x.monto);if(m1===null)return;let f1=prompt('Fecha (AAAA-MM-DD):',x.fecha||'');if(f1===null)return;x.descripcion=d1;x.monto=parseFloat(m1);x.fecha=f1;guardar();render();}
+function editarGasto(i){let g=datos.gastos[i];let d1=prompt('Gasto:',g.descripcion);if(d1===null)return;let m1=prompt('Monto:',g.monto);if(m1===null)return;let f1=prompt('Fecha (AAAA-MM-DD):',g.fecha||'');if(f1===null)return;let cat=prompt('Categoría:',g.categoria||'Gastos generales');if(cat===null)return;g.descripcion=d1;g.monto=parseFloat(m1);g.fecha=f1;g.categoria=cat;guardar();render();}
+function editarEvento(i){let e=datos.eventos[i];let t=prompt('Título:',e.titulo);if(t===null)return;let f=prompt('Fecha (AAAA-MM-DD):',aISO(e.fecha));if(f===null)return;let n=prompt('Nota:',e.nota||'');if(n===null)return;e.titulo=t;e.fecha=f;e.nota=n;guardar();render();}
+function borrarEvento(i){if(!confirm('¿Borrar?'))return;datos.eventos.splice(i,1);guardar();render();}
+function editarPromo(i){let p=datos.promos[i];let l=prompt('¿Dónde? Ej: Carrefour',p.lugar);if(l===null)return;let b=prompt('Banco / Billetera:',p.banco);if(b===null)return;let m=prompt('Medio de pago: Ej: Tarjeta, QR, Débito',p.medio);if(m===null)return;let d=prompt('Descuento / Promo: Ej: 20% OFF',p.descuento);if(d===null)return;let dia=prompt('Día: Todos, Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo',p.dia);if(dia===null)return;p.lugar=l;p.banco=b;p.medio=m;p.descuento=d;p.dia=dia;guardar();render();}
+function borrarPromo(i){if(!confirm('¿Borrar promo?'))return;datos.promos.splice(i,1);guardar();render();}
+function borrarBilletera(i){if(!confirm('¿Borrar?'))return;datos.billeteras.splice(i,1);guardar();render();}
+function calendarioHTML(){
+  let y=mesCal.getFullYear(),m=mesCal.getMonth(),hoy=new Date().toISOString().slice
