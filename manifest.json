@@ -2,7 +2,7 @@
   "name": "SlyApp - Mis Finanzas",
   "short_name": "SlyApp",
   "description": "Ingresos, Gastos, Sueldo, Visa y Amex",
-  "start_url": "./?v=58",
+  "start_url": "./?v=59",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
