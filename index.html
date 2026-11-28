@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Finanzas - v59/60</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f6f6f8;padding:14px;padding-bottom:95px}
+h1{font-size:32px;font-weight:900;margin:6px 0 14px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.small{font-size:13px;color:#666}.big{font-size:22px;font-weight:800}
+input,select,button{padding:10px;border-radius:10px;border:1px solid #ddd;width:100%;font-size:15px}
+button{border:none;font-weight:700;cursor:pointer}.btn-add{margin-top:8px}
+.mes{cursor:pointer}.mes-body{display:none;margin-top:12px}.mes.open .mes-body{display:block}
+.linea{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;align-items:center}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #eee;padding:8px 2px calc(8px + env(safe-area-inset-bottom));overflow-x:auto}
+.tab{flex:1;min-width:62px;text-align:center;font-size:11px;font-weight:700;padding:10px 2px;border-radius:12px;cursor:pointer;color:#888}
+.tab.active{color:#fff;background:#7c3aed}
+.pantalla{display:none}.pantalla.show{display:block}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kpi .card{margin:0;text-align:center}
+.del{width:auto;background:#fee2e2;color:#dc2626;padding:6px 10px}
+label{font-size:13px;font-weight:700;margin:10px 0 4px;display:block}
+/* CALENDARIO INICIO */
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:13px}
+.cal-dia{padding:10px 2px;border-radius:10px;background:#f1f5f9;cursor:pointer;position:relative}
+.cal-dia.hoy{background:#7c3aed;color:#fff;font-weight:800}
+.cal-dia.sel{outline:2px solid #7c3aed}
+.cal-dia .dot{width:6px;height:6px;background:#ef4444;border-radius:50%;margin:2px auto 0}
+.cal-dia.turno .dot{background:#16a34a}
+.pill{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700}
+.pill-v{background:#fee2e2;color:#dc2626}.pill-t{background:#dcfce7;color:#15803d}.pill-o{background:#dbeafe;color:#1d4ed8}
+</style>
+</head>
+<body>
+
+<!-- INICIO CON CALENDARIO - v59/60 -->
+<div id="p-inicio" class="pantalla show">
+<h1>INICIO</h1>
+<div class="card"><div class="row"><b id="mesActualLabel">Diciembre 2026</b><select id="mesSelect" style="width:auto"></select></div>
+<div style="margin-top:12px"><span class="small">Saldo este mes</span><div class="big" id="inicioSaldo">$ 0</div></div></div>
+<div class="kpi">
+<div class="card"><div class="small">Ingresos</div><div class="big" id="inicioIngresos" style="color:#16a34a">$ 0</div></div>
+<div class="card"><div class="small">Gastos</div><div class="big" id="inicioGastos" style="color:#ea580c">$ 0</div></div>
+<div class="card"><div class="small">Tarjetas</div><div class="big" id="inicioTarjetas" style="color:#2563eb">$ 0</div></div>
+<div class="card"><div class="small">Consumos</div><div class="big" id="inicioConsumos" style="color:#db2777">0</div></div>
+</div>
+
+<div class="card">
+<div class="cal-head"><button style="width:auto" onclick="cambiarMes(-1)">◀</button><b id="calTitulo">Diciembre 2026</b><button style="width:auto" onclick="cambiarMes(1)">▶</button></div>
+<div class="cal-grid" style="font-weight:800;color:#666"><div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+<div class="cal-grid" id="calGrid" style="margin-top:6px"></div>
+<div class="small" style="margin-top:8px">Tocá un día para agregar vencimiento o turno. 🔴 vencimiento 🟢 turno</div>
+</div>
+
+<div class="card" id="cardAddEvento">
+<b>Agregar vencimiento / turno</b>
+<label>Día seleccionado</label><input type="date" id="evFecha" value="2026-12-01">
+<label>Tipo</label><select id="evTipo"><option value="vencimiento">Vencimiento - ej: tarjeta, servicio</option><option value="turno">Turno - ej: médico, dentista</option><option value="otro">Otro</option></select>
+<label>Descripción</label><input id="evDesc" placeholder="Ej: Vence VISA, Turno dentista">
+<label>Monto / Hora (opcional)</label><input id="evMonto" placeholder="Ej: 15000 o 10:30 hs">
+<button class="btn-add" style="background:#7c3aed;color:#fff" onclick="addEvento()">Agregar al calendario</button>
+</div>
+
+<div class="card"><b>Vencimientos y turnos del mes</b><div id="listaEventos" style="margin-top:8px"></div></div>
+</div>
+
+<!-- INGRESOS COMO ESTABA v59 -->
+<div id="p-ingresos" class="pantalla">
+<h1>INGRESOS</h1>
+<div id="listaIngresos"></div>
+<div class="card"><b>Agregar sueldo / ingreso</b><label>Mes</label><select id="ingMes"></select><label>Descripción</label><input id="ingDesc" placeholder="Ej: Sueldo"><label>Monto</label><input id="ingMonto" type="number" placeholder="0"><button class="btn-add" style="background:#16a34a;color:#fff" onclick="addIngresoSimple()">Agregar</button></div>
+</div>
+
+<!-- GASTOS COMO ESTABA -->
+<div id="p-gastos" class="pantalla">
+<h1>GASTOS</h1>
+<div id="listaGastos"></div>
+<div class="card"><b>Agregar gasto</b><label>Mes</label><select id="gastoMes"></select><label>Descripción</label><input id="gastoDesc" placeholder="Ej: Supermercado"><label>Monto</label><input id="gastoMonto" type="number" placeholder="0"><button class="btn-add" style="background:#ea580c;color:#fff" onclick="addGasto()">Agregar gasto</button></div>
+</div>
+
+<!-- TARJETAS COMO ESTABA -->
+<div id="p-tarjetas" class="pantalla">
+<h1>TARJETAS</h1>
+<div id="listaTarjetas"></div>
+</div>
+
+<!-- CONSUMOS COMO ESTABA -->
+<div id="p-consumos" class="pantalla">
+<h1>CONSUMOS POR MES</h1>
+<div id="listaConsumos"></div>
+<div class="card"><b>Agregar consumo</b><label>Mes</label><select id="cMes"></select><label>Nombre</label><input id="cNombre" placeholder="Ej: Farmacity"><label>Monto</label><input id="cMonto" type="number" placeholder="0"><button class="btn-add" style="background:#db2777;color:#fff" onclick="addConsumo()">Agregar consumo</button></div>
+</div>
+
+<!-- PROMOS COMO ESTABA -->
+<div id="p-promos" class="pantalla">
+<h1>PROMOS</h1>
+<div class="card"><b>💳 VISA - Banco Nación</b><div class="small">Lunes y martes - 20% en supermercados</div></div>
+<div class="card"><b>💳 AMEX - Banco Galicia</b><div class="small">Miércoles - 25% en Farmacity</div></div>
+<div class="card"><b>💳 Mastercard - Banco Provincia</b><div class="small">Jueves - 30% en indumentaria</div></div>
+<div class="card"><b>Agregar promo</b><label>Banco / Tarjeta</label><input id="promoBanco" placeholder="Ej: VISA Nación"><label>Promo</label><input id="promoDesc" placeholder="Ej: 20% en super"><button class="btn-add" style="background:#7c3aed;color:#fff" onclick="addPromo()">Agregar promo</button></div>
+<div id="listaPromos"></div>
+</div>
+
+<div class="tabs">
+<div class="tab active" data-t="inicio" onclick="go('inicio')">🏠<br>Inicio</div>
+<div class="tab" data-t="ingresos" onclick="go('ingresos')">💵<br>Ingresos</div>
+<div class="tab" data-t="gastos" onclick="go('gastos')">🧾<br>Gastos</div>
+<div class="tab" data-t="tarjetas" onclick="go('tarjetas')">💳<br>Tarjetas</div>
+<div class="tab" data-t="consumos" onclick="go('consumos')">📅<br>Consumos</div>
+<div class="tab" data-t="promos" onclick="go('promos')">🎁<br>Promos</div>
+</div>
+
+<script>
+const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+function mesKey(y,m){return y+"-"+String(m+1).padStart(2,"0")}
+function mesLabel(k){let [y,m]=k.split("-");return MESES[+m-1]+" "+y}
+let meses=[]; for(let y=2026;y<=2027;y++) for(let m=0;m<12;m++) meses.push(mesKey(y,m));
+let mesSel="2026-12";
+let calAnio=2026, calMes=11, diaSel="2026-12-01";
+let data=JSON.parse(localStorage.getItem("finanzas_v59")||"null")||{
+ingresos:[{mes:"2026-12",desc:"Sueldo",monto:850000}],
+gastos:[{mes:"2026-12",desc:"Supermercado",monto:120000},{mes:"2026-12",desc:"Alquiler",monto:350000}],
+tarjetas:[{nombre:"VISA",cierre:"20",vto:"28"},{nombre:"AMEX",cierre:"18",vto:"26"},{nombre:"Mastercard",cierre:"15",vto:"22"}],
+consumos:[{mes:"2026-12",nombre:"Farmacity3",monto:2148.50},{mes:"2026-12",nombre:"Grimoldi",monto:25833.35}],
+promos:[],
+eventos:[{fecha:"2026-12-05",tipo:"turno",desc:"Turno dentista",extra:"10:30 hs"},{fecha:"2026-12-28",tipo:"vencimiento",desc:"Vence VISA",extra:""}]
+};
+function save(){localStorage.setItem("finanzas_v59",JSON.stringify(data))}
+function fmt(n){return "$ "+Number(n).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function go(t){document.querySelectorAll(".pantalla").forEach(e=>e.classList.remove("show"));document.getElementById("p-"+t).classList.add("show");document.querySelectorAll(".tab").forEach(e=>e.classList.remove("active"));document.querySelector(`.tab[data-t="${t}"]`).classList.add("active");render()}
+function sumIng(m){return data.ingresos.filter(x=>x.mes===m).reduce((a,b)=>a+Number(b.monto),0)}
+function sumGas(m){return data.gastos.filter(x=>x.mes===m).reduce((a,b)=>a+Number(b.monto),0)}
+function sumCon(m){return data.consumos.filter(x=>x.mes===m).reduce((a,b)=>a+Number(b.monto),0)}
+function cambiarMes(d){calMes+=d; if(calMes<0){calMes=11;calAnio--} if(calMes>11){calMes=0;calAnio++} renderCal()}
+function renderCal(){
+document.getElementById("calTitulo").textContent=MESES[calMes]+" "+calAnio;
+let primer=new Date(calAnio,calMes,1); let offset=(primer.getDay()+6)%7; let dias=new Date(calAnio,calMes+1,0).getDate();
+let h="";
+for(let i=0;i<offset;i++) h+=`<div></div>`;
+for(let d=1;d<=dias;d++){
+let f=`${calAnio}-${String(calMes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+let evs=data.eventos.filter(e=>e.fecha===f);
+let cls="cal-dia"; if(f===diaSel) cls+=" sel"; let hoy=new Date(); if(d===hoy.getDate()&&calMes===hoy.getMonth()&&calAnio===hoy.getFullYear()) cls+=" hoy";
+let dots=evs.length?`<div class="dot"></div>`:"";
+h+=`<div class="${cls}" onclick="seleccionarDia('${f}')">${d}${dots}</div>`;
+}
+document.getElementById("calGrid").innerHTML=h;
+let mesK=`${calAnio}-${String(calMes+1).padStart(2,"0")}`;
+let list=data.eventos.filter(e=>e.fecha.startsWith(mesK)).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+document.getElementById("listaEventos").innerHTML=list.map(e=>{let idx=data.eventos.indexOf(e);let pill=e.tipo==="turno"?"pill pill-t":"pill pill-v";return `<div class="linea"><div><span class="${pill}">${e.tipo}</span> <b>${e.fecha.slice(8,10)}/${e.fecha.slice(5,7)} - ${e.desc}</b><div class="small">${e.extra||""}</div></div><button class="del" onclick="delEvento(${idx})">✕</button></div>`}).join("")||`<div class="small">Sin vencimientos ni turnos este mes</div>`;
+}
+function seleccionarDia(f){diaSel=f;document.getElementById("evFecha").value=f;renderCal()}
+function addEvento(){let f=document.getElementById("evFecha").value,t=document.getElementById("evTipo").value,d=document.getElementById("evDesc").value,e=document.getElementById("evMonto").value; if(!f||!d) return alert("Falta fecha o descripción"); data.eventos.push({fecha:f,tipo:t,desc:d,extra:e}); save(); renderCal();}
+function delEvento(i){data.eventos.splice(i,1);save();renderCal()}
+function render(){
+document.getElementById("mesActualLabel").textContent=mesLabel(mesSel);
+let ing=sumIng(mesSel), gas=sumGas(mesSel), tar=sumCon(mesSel);
+document.getElementById("inicioIngresos").textContent=fmt(ing);
+document.getElementById("inicioGastos").textContent=fmt(gas);
+document.getElementById("inicioTarjetas").textContent=fmt(tar);
+document.getElementById("inicioConsumos").textContent=data.consumos.filter(x=>x.mes===mesSel).length;
+document.getElementById("inicioSaldo").textContent=fmt(ing-gas-tar);
+renderCal();
+let html=""; meses.forEach(m=>{let l=data.ingresos.filter(x=>x.mes===m); html+=`<div class="card mes ${m===mesSel?"open":""}" onclick="this.classList.toggle('open')"><div class="row"><b>▶ ${mesLabel(m)}</b><b style="color:#16a34a">${fmt(sumIng(m))}</b></div><div class="mes-body" onclick="event.stopPropagation()">${l.map(x=>{let idx=data.ingresos.indexOf(x);return `<div class="linea"><span>${x.desc}</span><div class="row" style="gap:6px"><b>${fmt(x.monto)}</b><button class="del" onclick="delIngreso(${idx})">✕</button></div></div>`}).join("")||`<div class="small">Sin ingresos</div>`}</div></div>`});
+document.getElementById("listaIngresos").innerHTML=html;
+let hg=""; meses.forEach(m=>{let l=data.gastos.filter(x=>x.mes===m); if(!l.length) return; hg+=`<div class="card"><b>${mesLabel(m)}</b> - <b>${fmt(sumGas(m))}</b>${l.map(x=>{let idx=data.gastos.indexOf(x);return `<div class="linea"><span>${x.desc}</span><div class="row" style="gap:6px"><b>${fmt(x.monto)}</b><button class="del" onclick="delGasto(${idx})">✕</button></div></div>`}).join("")}</div>`});
+document.getElementById("listaGastos").innerHTML=hg||"<div class='card small'>Sin gastos</div>";
+document.getElementById("listaTarjetas").innerHTML=data.tarjetas.map(t=>`<div class="card"><div class="row"><b>💳 ${t.nombre}</b><span class="small">Cierre ${t.cierre} - Vto ${t.vto}</span></div></div>`).join("");
+let hc=""; meses.forEach(m=>{let l=data.consumos.filter(x=>x.mes===m); if(!l.length) return; hc+=`<div class="card"><div class="row"><b>${mesLabel(m)}</b><b>${fmt(sumCon(m))}</b></div>${l.map(x=>{let idx=data.consumos.indexOf(x);return `<div class="linea"><span>${x.nombre}</span><div class="row" style="gap:6px"><b>${fmt(x.monto)}</b><button class="del" onclick="delConsumo(${idx})">✕</button></div></div>`}).join("")}</div>`});
+document.getElementById("listaConsumos").innerHTML=hc||"<div class='card small'>Sin consumos</div>";
+document.getElementById("listaPromos").innerHTML=data.promos.map(p=>`<div class="card"><b>${p.banco}</b><div class="small">${p.desc}</div></div>`).join("");
+let opts=meses.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join("");
+["mesSelect","ingMes","gastoMes","cMes"].forEach(id=>{document.getElementById(id).innerHTML=opts});
+document.getElementById("mesSelect").value=mesSel; document.getElementById("ingMes").value=mesSel; document.getElementById("gastoMes").value=mesSel; document.getElementById("cMes").value=mesSel;
+document.getElementById("mesSelect").onchange=e=>{mesSel=e.target.value;render()};
+}
+function addIngresoSimple(){let m=document.getElementById("ingMes").value,d=document.getElementById("ingDesc").value,mo=document.getElementById("ingMonto").value; if(!d||!mo) return alert("Falta dato"); data.ingresos.push({mes:m,desc:d,monto:Number(mo)}); save(); render();}
+function delIngreso(i){data.ingresos.splice(i,1);save();render();}
+function addGasto(){let m=document.getElementById("gastoMes").value,d=document.getElementById("gastoDesc").value,mo=document.getElementById("gastoMonto").value; if(!d||!mo) return alert("Falta dato"); data.gastos.push({mes:m,desc:d,monto:Number(mo)}); save(); render();}
+function delGasto(i){data.gastos.splice(i,1);save();render();}
+function addConsumo(){let m=document.getElementById("cMes").value,n=document.getElementById("cNombre").value,mo=document.getElementById("cMonto").value; if(!n||!mo) return alert("Falta dato"); data.consumos.push({mes:m,nombre:n,monto:Number(mo)}); save(); render();}
+function delConsumo(i){data.consumos.splice(i,1);save();render();}
+function addPromo(){let b=document.getElementById("promoBanco").value,d=document.getElementById("promoDesc").value; if(!b||!d) return alert("Falta dato"); data.promos.push({banco:b,desc:d}); save(); render();}
+render();
+</script>
+</body>
+</html>
